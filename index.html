@@ -134,10 +134,12 @@
   }
   #svg-wrapper svg { width: 100%; height: 100%; overflow: visible; }
 
-  #arc-burst { stroke: var(--ink); stroke-width: 5; }
-  #arc-face  { fill: var(--white); stroke: var(--ink); stroke-width: 5; }
+  #arc-face  { fill: var(--white); stroke: var(--ink); stroke-width: 6; }
+  #arc-rim   { fill: none; stroke: var(--ink); stroke-width: 6; }
+  .arc-stripe-base { fill: none; stroke: var(--yellow); }
+  .arc-stripe      { fill: none; stroke: var(--yellow-lt); }
   #time-text {
-    font-size: 78px;
+    font-size: 88px;
     fill: var(--ink);
     dominant-baseline: middle;
     text-anchor: middle;
@@ -154,13 +156,21 @@
     transition: opacity 0.3s;
   }
   #overtime-hint.visible { opacity: 1; animation: overtime-pulse 1.6s ease-in-out infinite; }
+  #time-caption {
+    font-size: 20px;
+    font-weight: 900;
+    fill: var(--red-dk);
+    dominant-baseline: middle;
+    text-anchor: middle;
+  }
+  #overtime-hint.visible ~ #time-caption { display: none; }
   @keyframes overtime-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
   @media (prefers-reduced-motion: reduce) {
     #overtime-hint.visible { animation: none; }
   }
-  #arc-track    { fill: none; stroke: var(--white); }
+  #arc-track    { fill: none; stroke: #EFE6CC; }
   #arc-progress { fill: none; stroke: var(--coral); stroke-linecap: butt;
-                  transition: stroke 0.4s, stroke-dashoffset 0.25s linear; }
+                  transition: stroke-dashoffset 0.25s linear; }
 
   #side-label {
     font-size: clamp(13px, 1.5vw, 18px);
@@ -946,15 +956,24 @@
 
       <div id="svg-wrapper">
         <svg viewBox="0 0 400 400">
-          <polygon id="arc-burst" fill="#FFD400" points="200.0,1.0 228.5,20.2 261.5,10.7 282.6,37.8 317.0,39.0 328.7,71.3 361.0,83.0 362.2,117.4 389.3,138.5 379.8,171.5 399.0,200.0 379.8,228.5 389.3,261.5 362.2,282.6 361.0,317.0 328.7,328.7 317.0,361.0 282.6,362.2 261.5,389.3 228.5,379.8 200.0,399.0 171.5,379.8 138.5,389.3 117.4,362.2 83.0,361.0 71.3,328.7 39.0,317.0 37.8,282.6 10.7,261.5 20.2,228.5 1.0,200.0 20.2,171.5 10.7,138.5 37.8,117.4 39.0,83.0 71.3,71.3 83.0,39.0 117.4,37.8 138.5,10.7 171.5,20.2"/>
-          <circle id="arc-face"     cx="200" cy="200" r="153"/>
-          <circle id="arc-track"    cx="200" cy="200" r="168" stroke-width="26"/>
-          <circle id="arc-progress" cx="200" cy="200" r="168" stroke-width="26"
-                  stroke-dasharray="1055.6" stroke-dashoffset="0"
-                  transform="rotate(-90 200 200)"/>
-          <circle cx="200" cy="200" r="183" fill="none" stroke="#111111" stroke-width="5"/>
-          <text id="time-text"     x="200" y="195">00:00</text>
-          <text id="overtime-hint" x="200" y="255">超時中</text>
+          <defs>
+            <!-- Remaining-time arc is used as an alpha mask, so the striped ring "drains" as time runs out -->
+            <mask id="arc-mask" mask-type="alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="400" height="400">
+              <circle id="arc-progress" cx="200" cy="200" r="168" stroke-width="36"
+                      stroke-dasharray="1055.6" stroke-dashoffset="0"
+                      transform="rotate(-90 200 200)"/>
+            </mask>
+          </defs>
+          <circle id="arc-track"   cx="200" cy="200" r="168" stroke-width="36"/>
+          <g mask="url(#arc-mask)">
+            <circle class="arc-stripe-base" cx="200" cy="200" r="168" stroke-width="36"/>
+            <circle class="arc-stripe"      cx="200" cy="200" r="168" stroke-width="36" stroke-dasharray="22 22"/>
+          </g>
+          <circle id="arc-face"    cx="200" cy="200" r="150"/>
+          <circle id="arc-rim"     cx="200" cy="200" r="186"/>
+          <text id="time-text"     x="200" y="190">00:00</text>
+          <text id="overtime-hint" x="200" y="252">超時中</text>
+          <text id="time-caption"  x="200" y="252">剩餘時間</text>
         </svg>
       </div>
       <!-- Dual circles for 自由辯論 (hidden by default) -->
