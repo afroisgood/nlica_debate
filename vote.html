@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>辯論活動 — 投票與留言</title>
+<style>
+  :root {
+    --navy:      #123B3C;
+    --navy-dk:   #0A2324;
+    --navy-lt:   #1D5F5E;
+    --cream:     #F3ECDA;
+    --yellow:    #D9A441;
+    --yel-dk:    #B8862F;
+    --coral:     #E8734F;
+    --cor-dk:    #C85A38;
+    --orange:    #7BAE7F;
+    --ora-dk:    #5E9563;
+    --ink:       #1B2422;
+    --white:     #FFFFFF;
+    --gray-blue: #8FAFA8;
+    --muted:     rgba(243,236,218,0.45);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html {
+    background: var(--navy-dk);
+    min-height: 100%;
+  }
+  body {
+    font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans CJK TC",
+                 "Microsoft JhengHei", "PingFang TC", sans-serif;
+    color: var(--cream);
+    min-height: 100vh;
+    background: var(--navy-dk);
+  }
+
+  /* ══════════════════════════════════════
+     NICKNAME SCREEN
+  ══════════════════════════════════════ */
+  #nickname-screen {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 28px;
+    gap: 20px;
+    text-align: center;
+  }
+  .welcome-icon { font-size: 52px; line-height: 1; }
+  .welcome-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--cream);
+    line-height: 1.3;
+  }
+  .welcome-sub {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.6;
+    max-width: 280px;
+  }
+  #nick-input {
+    width: 100%;
+    max-width: 300px;
+    padding: 14px 18px;
+    font-size: 16px;
+    font-family: inherit;
+    font-weight: 600;
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.07);
+    color: var(--cream);
+    outline: none;
+    text-align: center;
+  }
+  #nick-input::placeholder { color: var(--muted); font-weight: 400; }
+  #nick-input:focus { border-color: var(--yellow); }
+  #nick-error {
+    font-size: 13px;
+    color: #FF9999;
+    display: none;
+    min-height: 18px;
+  }
+  .big-btn {
+    width: 100%;
+    max-width: 300px;
+    height: 52px;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-family: inherit;
+    font-weight: 800;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: transform 0.1s, filter 0.1s;
+  }
+  .big-btn:active { transform: scale(0.97); filter: brightness(0.9); }
+  .big-btn.primary { background: var(--yellow); color: var(--ink); }
+  .big-btn.primary:hover { filter: brightness(1.06); }
+
+  /* ══════════════════════════════════════
+     MAIN APP
+  ══════════════════════════════════════ */
+  #app-screen { display: none; flex-direction: column; min-height: 100vh; }
+
+  /* Header */
+  #app-header {
+    background: var(--navy);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 2px solid var(--navy-dk);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  #header-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--cream);
+    opacity: 0.8;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #nick-display {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  #nick-name-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--yellow);
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #change-nick-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: inherit;
+    box-shadow: none;
+    height: auto;
+    line-height: 1;
+  }
+  #change-nick-btn:hover { color: var(--cream); }
+
+  /* Sections */
+  .app-section {
+    padding: 18px 18px 0;
+  }
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* ── Vote Buttons ── */
+  #vote-section { padding-bottom: 0; }
+  #vote-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .vote-btn {
+    height: 90px;
+    border: 3px solid transparent;
+    border-radius: 16px;
+    font-size: 20px;
+    font-family: inherit;
+    font-weight: 900;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: transform 0.12s, box-shadow 0.15s, border-color 0.15s, background 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .vote-btn:active { transform: scale(0.96); }
+  .vote-btn .btn-label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; opacity: 0.75; }
+
+  .vote-btn.pro {
+    background: rgba(232,115,79,0.12);
+    border-color: rgba(232,115,79,0.3);
+    color: var(--coral);
+  }
+  .vote-btn.pro.selected {
+    background: var(--coral);
+    border-color: var(--coral);
+    color: var(--white);
+    box-shadow: 0 6px 20px rgba(232,115,79,0.45);
+    transform: scale(1.03);
+  }
+  .vote-btn.con {
+    background: rgba(123,174,127,0.12);
+    border-color: rgba(123,174,127,0.3);
+    color: var(--orange);
+  }
+  .vote-btn.con.selected {
+    background: var(--orange);
+    border-color: var(--orange);
+    color: var(--white);
+    box-shadow: 0 6px 20px rgba(123,174,127,0.45);
+    transform: scale(1.03);
+  }
+
+  /* Vote tally bar — hidden until admin reveals */
+  #vote-tally {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 18px;
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+  }
+  body.vote-revealed #vote-tally,
+  body.admin-logged-in #vote-tally { display: flex; }
+
+  /* Admin FAB */
+  #admin-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(243,236,218,0.08);
+    border: 1px solid rgba(243,236,218,0.15);
+    color: rgba(243,236,218,0.3);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    transition: background 0.2s, color 0.2s;
+  }
+  body.admin-logged-in #admin-fab {
+    background: rgba(217,164,65,0.2);
+    border-color: rgba(217,164,65,0.4);
+    color: var(--yellow);
+  }
+
+  /* Admin login modal */
+  #admin-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,35,36,0.85);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+  }
+  #admin-modal.open { display: flex; }
+  #admin-modal-box {
+    background: #1D5F5E;
+    border-radius: 16px;
+    padding: 28px 24px;
+    width: min(320px, 90vw);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  #admin-modal-box h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--cream);
+    text-align: center;
+  }
+  #admin-pwd-input {
+    width: 100%;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 15px;
+    color: var(--cream);
+    outline: none;
+  }
+  #admin-pwd-error {
+    font-size: 12px;
+    color: #FF9999;
+    text-align: center;
+    display: none;
+  }
+  .admin-modal-btns {
+    display: flex;
+    gap: 10px;
+  }
+  .adm-btn {
+    flex: 1;
+    padding: 11px;
+    border-radius: 10px;
+    border: none;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .adm-btn.cancel { background: rgba(255,255,255,0.08); color: var(--cream); }
+  .adm-btn.ok     { background: var(--yellow); color: var(--ink); }
+
+  /* Admin stats bar (visible when logged in) */
+  #admin-stats-bar {
+    display: none;
+    background: rgba(217,164,65,0.1);
+    border: 1px solid rgba(217,164,65,0.25);
+    border-radius: 12px;
+    padding: 10px 16px;
+    margin: 12px 18px 0;
+    gap: 12px;
+    align-items: center;
+    font-size: 13px;
+  }
+  body.admin-logged-in #admin-stats-bar { display: flex; }
+  #admin-stats-bar .adm-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--yellow);
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+  #admin-stats-bar .adm-counts {
+    flex: 1;
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+  }
+  #admin-stats-bar .adm-pro { color: var(--coral); font-weight: 700; }
+  #admin-stats-bar .adm-con { color: var(--orange); font-weight: 700; }
+  #admin-stats-bar .adm-total { color: rgba(243,236,218,0.6); }
+  #admin-logout-btn {
+    background: none;
+    border: 1px solid rgba(243,236,218,0.2);
+    border-radius: 8px;
+    color: rgba(243,236,218,0.5);
+    font-size: 11px;
+    padding: 4px 8px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .tally-bar-wrap {
+    height: 18px;
+    border-radius: 9px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.06);
+    display: flex;
+  }
+  #tally-bar-pro {
+    background: var(--coral);
+    height: 100%;
+    transition: width 0.8s cubic-bezier(.4,0,.2,1);
+    width: 50%;
+  }
+  #tally-bar-con {
+    background: var(--orange);
+    height: 100%;
+    flex: 1;
+    transition: width 0.8s cubic-bezier(.4,0,.2,1);
+  }
+  .tally-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+  }
+  .tally-pro { color: var(--coral); font-weight: 700; }
+  .tally-con { color: var(--orange); font-weight: 700; }
+  .tally-total { color: var(--muted); }
+  #my-vote-status {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 4px;
+  }
+  #my-vote-status strong { color: var(--yellow); }
+
+  /* ── Question FAB ── */
+  #question-fab {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--yellow);
+    color: var(--ink);
+    border: none;
+    border-radius: 999px;
+    padding: 13px 26px;
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    z-index: 200;
+    transition: transform 0.12s, filter 0.12s;
+  }
+  #question-fab:active { transform: translateX(-50%) scale(0.96); }
+
+  /* ── Question Modal ── */
+  #question-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,35,36,0.85);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+  }
+  #question-modal.open { display: flex; }
+  #question-modal-box {
+    background: #1D5F5E;
+    border-radius: 16px;
+    padding: 28px 24px;
+    width: min(360px, 90vw);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  #question-modal-box h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--cream);
+    text-align: center;
+  }
+  #qm-side-picker {
+    display: flex;
+    gap: 10px;
+  }
+  .qm-side-btn {
+    flex: 1;
+    padding: 16px 8px;
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.05);
+    color: var(--cream);
+    font-size: 16px;
+    font-family: inherit;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .qm-side-btn.pro.selected { background: var(--coral); border-color: var(--coral); }
+  .qm-side-btn.con.selected { background: var(--orange); border-color: var(--orange); }
+  #qm-form { display: none; flex-direction: column; gap: 10px; }
+  #qm-form.open { display: flex; }
+  #qm-target-label { font-size: 13px; color: var(--muted); text-align: center; }
+  #qm-target-label strong { color: var(--cream); }
+  #qm-textarea {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--cream);
+    font-size: 15px;
+    font-family: inherit;
+    line-height: 1.5;
+    resize: none;
+    width: 100%;
+    min-height: 80px;
+    outline: none;
+  }
+  #qm-textarea::placeholder { color: var(--muted); }
+  #qm-char-count { font-size: 12px; color: var(--muted); text-align: right; }
+  #qm-char-count.warn { color: #FFAA55; }
+  #qm-char-count.over { color: #FF7777; }
+
+  /* ── Comment Input ── */
+  #comment-section { padding-bottom: 0; }
+  #comment-input-wrap {
+    background: rgba(255,255,255,0.05);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: border-color 0.15s;
+    margin-bottom: 16px;
+  }
+  #comment-input-wrap:focus-within { border-color: rgba(217,164,65,0.5); }
+  #comment-textarea {
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--cream);
+    font-size: 15px;
+    font-family: inherit;
+    line-height: 1.5;
+    resize: none;
+    width: 100%;
+    min-height: 72px;
+  }
+  #comment-textarea::placeholder { color: var(--muted); }
+  .comment-input-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  #char-count { font-size: 12px; color: var(--muted); }
+  #char-count.warn { color: #FFAA55; }
+  #char-count.over { color: #FF7777; }
+  #send-btn {
+    background: var(--yellow);
+    color: var(--ink);
+    border: none;
+    border-radius: 10px;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: 800;
+    cursor: pointer;
+    transition: filter 0.12s, transform 0.1s;
+    box-shadow: none;
+    height: auto;
+  }
+  #send-btn:hover:not(:disabled)  { filter: brightness(1.08); }
+  #send-btn:active:not(:disabled) { transform: scale(0.96); }
+  #send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(217,164,65,0.95);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 10px 22px;
+    border-radius: 24px;
+    opacity: 0;
+    transition: opacity 0.25s, transform 0.25s;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 50;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── Comment Feed ── */
+  #feed-section { padding: 18px 18px 24px; }
+  .feed-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  #feed-count { font-size: 12px; color: var(--muted); }
+
+  #feed-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .feed-item {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 10px 13px;
+    border-left: 3px solid var(--gray-blue);
+    animation: slideIn 0.2s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .feed-item.pro { border-left-color: var(--coral); }
+  .feed-item.con { border-left-color: var(--orange); }
+  .feed-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .feed-nick { font-size: 12px; font-weight: 700; color: var(--yellow); }
+  .feed-time { font-size: 11px; color: var(--muted); }
+  .feed-text { font-size: 14px; color: var(--cream); line-height: 1.5; word-break: break-word; }
+  #feed-empty { font-size: 13px; color: var(--muted); text-align: center; padding: 32px 0; }
+
+  .like-btn {
+    background: rgba(255,255,255,0.15);
+    border: 1.5px solid rgba(255,255,255,0.45);
+    border-radius: 20px;
+    color: var(--cream);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 5px 14px;
+    font-family: inherit;
+    box-shadow: none;
+    height: auto;
+    line-height: 1.4;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
+  }
+  .like-btn.liked {
+    background: rgba(217,164,65,0.28);
+    border-color: var(--yellow);
+    color: var(--yellow);
+  }
+  .like-btn:hover:not(.liked) { background: rgba(255,255,255,0.22); }
+  .like-btn:active { transform: scale(0.93); }
+
+  /* ── Topic Vote Section (vote.html) ── */
+  #topic-vote-section {
+    display: none;
+    flex-direction: column;
+    padding-bottom: 32px;
+  }
+  #tv-instruction {
+    font-size: 14px;
+    color: rgba(243,236,218,0.75);
+    line-height: 1.6;
+    margin-bottom: 10px;
+  }
+  #tv-my-status {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--yellow);
+  }
+  #tv-my-status span { font-size: 18px; }
+  #tv-cards-list { display: flex; flex-direction: column; gap: 8px; padding: 4px 18px 0; }
+
+  .tv-card {
+    background: rgba(255,255,255,0.06);
+    border: 2px solid rgba(255,255,255,0.12);
+    border-radius: 14px;
+    padding: 13px 14px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tv-card.tv-selected {
+    background: rgba(217,164,65,0.14);
+    border-color: var(--yellow);
+  }
+  .tv-card.tv-full:not(.tv-selected) {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .tv-card.tv-closed {
+    opacity: 0.38;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  #tv-closed-notice {
+    background: rgba(232,52,42,0.15);
+    border: 1px solid rgba(232,52,42,0.4);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #FF9999;
+    text-align: center;
+    margin: 8px 18px 0;
+    display: none;
+  }
+  .tv-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 0;
+  }
+  .tv-check {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    color: transparent;
+    flex-shrink: 0;
+    margin-top: 1px;
+    transition: all 0.15s;
+  }
+  .tv-card.tv-selected .tv-check {
+    background: var(--yellow);
+    border-color: var(--yellow);
+    color: var(--ink);
+  }
+  .tv-num {
+    font-size: 12px; font-weight: 800;
+    color: rgba(243,236,218,0.45);
+    flex-shrink: 0; padding-top: 2px;
+  }
+  .tv-text {
+    font-size: 14px; font-weight: 700;
+    color: var(--cream); line-height: 1.45; flex: 1;
+  }
+  /* Results bar (hidden until user votes) */
+  .tv-results {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding-left: 30px;
+    margin-top: 8px;
+  }
+  #topic-vote-section.tv-voted .tv-results { display: flex; }
+  .tv-bar-bg {
+    flex: 1; height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px; overflow: hidden;
+  }
+  .tv-bar-fill {
+    height: 100%; background: rgba(243,236,218,0.35);
+    border-radius: 4px;
+    transition: width 0.7s cubic-bezier(.4,0,.2,1);
+    width: 0%;
+  }
+  .tv-card.tv-selected .tv-bar-fill { background: var(--yellow); }
+  .tv-count-text {
+    font-size: 12px; font-weight: 700;
+    color: rgba(243,236,218,0.55);
+    white-space: nowrap; min-width: 32px; text-align: right;
+  }
+
+  /* ── Change nickname modal ── */
+  #nick-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  #nick-modal.open { display: flex; }
+  #nick-modal-box {
+    background: var(--navy);
+    border: 2px solid var(--gray-blue);
+    border-radius: 18px;
+    padding: 26px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    max-width: 320px;
+  }
+  #nick-modal-box h3 { color: var(--cream); font-size: 16px; font-weight: 800; }
+  #new-nick-input {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 15px;
+    font-family: inherit;
+    font-weight: 600;
+    border-radius: 10px;
+    border: 2px solid rgba(255,255,255,0.15);
+    background: var(--navy-dk);
+    color: var(--cream);
+    outline: none;
+  }
+  #new-nick-input:focus { border-color: var(--yellow); }
+  .nick-modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+  .nm-btn {
+    padding: 9px 18px; border-radius: 9px; border: none;
+    font-family: inherit; font-weight: 700; font-size: 14px;
+    cursor: pointer; box-shadow: none; height: auto;
+  }
+  .nm-btn.ok     { background: var(--yellow); color: var(--ink); }
+  .nm-btn.cancel { background: rgba(255,255,255,0.1); color: var(--cream); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     NICKNAME SCREEN
+══════════════════════════════════════ -->
+<div id="nickname-screen">
+  <div class="welcome-icon">👋</div>
+  <div class="welcome-title">歡迎參與辯論活動！</div>
+  <div class="welcome-sub">請輸入一個暱稱，之後你就可以投票、留言，<br>和大家一起互動。</div>
+  <input type="text" id="nick-input" placeholder="輸入你的暱稱"
+         maxlength="12" autocomplete="off" autocorrect="off" spellcheck="false"/>
+  <div id="nick-error">請輸入暱稱（最多 12 個字）</div>
+  <button class="big-btn primary" id="nick-confirm">進入活動</button>
+</div>
+
+<!-- ══════════════════════════════════════
+     MAIN APP
+══════════════════════════════════════ -->
+<div id="app-screen">
+
+  <!-- Header -->
+  <div id="app-header">
+    <div id="header-title">生活之間：從住民到公民</div>
+    <div id="nick-display">
+      <span id="nick-name-label"></span>
+      <button id="change-nick-btn" title="修改暱稱">✏️</button>
+    </div>
+  </div>
+
+  <!-- Vote Section -->
+  <div class="app-section" id="vote-section">
+    <div class="section-label" id="vote-section-label">投票（可隨時更改）</div>
+    <div id="vote-closed-notice" style="display:none; background:rgba(232,52,42,0.15); border:1px solid rgba(232,52,42,0.4); border-radius:10px; padding:10px 14px; font-size:13px; color:#FF9999; text-align:center; margin-bottom:10px;">
+      投票目前已關閉，請等待主持人開放
+    </div>
+    <div id="vote-buttons">
+      <button class="vote-btn pro" id="vote-pro">
+        正方
+        <span class="btn-label">PRO</span>
+      </button>
+      <button class="vote-btn con" id="vote-con">
+        反方
+        <span class="btn-label">CON</span>
+      </button>
+    </div>
+    <div id="vote-tally">
+      <div class="tally-bar-wrap">
+        <div id="tally-bar-pro"></div>
+        <div id="tally-bar-con"></div>
+      </div>
+      <div class="tally-row">
+        <span class="tally-pro" id="tally-pro-text">正方 0票</span>
+        <span class="tally-total" id="tally-total-text">共 0 票</span>
+        <span class="tally-con" id="tally-con-text">0票 反方</span>
+      </div>
+      <div id="my-vote-status">尚未投票</div>
+    </div>
+  </div>
+
+  <!-- Admin stats bar (only visible when admin logged in) -->
+  <div id="admin-stats-bar">
+    <span class="adm-label">管理員</span>
+    <div class="adm-counts">
+      <span class="adm-pro" id="adm-pro-text">正方 0票</span>
+      <span class="adm-total" id="adm-total-text">共 0 票</span>
+      <span class="adm-con" id="adm-con-text">0票 反方</span>
+    </div>
+    <button id="admin-logout-btn">登出</button>
+  </div>
+
+  <!-- Comment Input -->
+  <div class="app-section" id="comment-section">
+    <div class="section-label">留言</div>
+    <div id="comment-input-wrap">
+      <textarea id="comment-textarea" placeholder="輸入留言…" maxlength="100" rows="3"></textarea>
+      <div class="comment-input-footer">
+        <span id="char-count">0 / 100</span>
+        <button id="send-btn">送出</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comment Feed -->
+  <div id="feed-section">
+    <div class="feed-header">
+      <div class="section-label" style="margin-bottom:0">所有留言</div>
+      <div id="feed-count"></div>
+    </div>
+    <div id="feed-list">
+      <div id="feed-empty">目前還沒有留言</div>
+    </div>
+  </div>
+
+  <!-- Topic Vote Section (下期題目票選 stage) -->
+  <div id="topic-vote-section">
+    <div class="app-section" style="padding-bottom:12px">
+      <div class="section-label">下期題目票選</div>
+      <div id="tv-instruction">選出你最想辯論的下期題目<br>最多可投 <strong>2 票</strong>，可取消後重投</div>
+      <div id="tv-my-status">已選 <span id="tv-my-count">0</span> / 2 票</div>
+    </div>
+    <div id="tv-closed-notice">⏱ 投票時間已結束</div>
+    <div id="tv-cards-list"></div>
+  </div>
+
+</div>
+
+<!-- Question FAB -->
+<button id="question-fab">🙋 提問</button>
+
+<!-- Question modal -->
+<div id="question-modal">
+  <div id="question-modal-box">
+    <h3>我要提問</h3>
+    <div id="qm-side-picker">
+      <button class="qm-side-btn pro" id="qm-side-pro" data-side="正方">正方</button>
+      <button class="qm-side-btn con" id="qm-side-con" data-side="反方">反方</button>
+    </div>
+    <div id="qm-form">
+      <div id="qm-target-label">提問對象：<strong id="qm-target-name"></strong>（匿名送出）</div>
+      <textarea id="qm-textarea" placeholder="輸入你想問的問題…" maxlength="100" rows="3"></textarea>
+      <div id="qm-char-count">0 / 100</div>
+    </div>
+    <div class="admin-modal-btns">
+      <button class="adm-btn cancel" id="qm-cancel">取消</button>
+      <button class="adm-btn ok" id="qm-submit" disabled>送出提問</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin FAB -->
+<button id="admin-fab" title="管理員登入">⚙</button>
+
+<!-- Admin login modal -->
+<div id="admin-modal">
+  <div id="admin-modal-box">
+    <h3>管理員登入</h3>
+    <input type="password" id="admin-pwd-input" placeholder="輸入密碼" autocomplete="off"/>
+    <div id="admin-pwd-error">密碼錯誤</div>
+    <div class="admin-modal-btns">
+      <button class="adm-btn cancel" id="admin-modal-cancel">取消</button>
+      <button class="adm-btn ok"     id="admin-modal-ok">登入</button>
+    </div>
+  </div>
+</div>
+
+<!-- Change nickname modal -->
+<div id="nick-modal">
+  <div id="nick-modal-box">
+    <h3>修改暱稱</h3>
+    <input type="text" id="new-nick-input" maxlength="12"
+           placeholder="輸入新暱稱" autocomplete="off"/>
+    <div class="nick-modal-btns">
+      <button class="nm-btn cancel" id="nick-modal-cancel">取消</button>
+      <button class="nm-btn ok"     id="nick-modal-ok">確認</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// FIREBASE
+// ══════════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey:            "AIzaSyAt2bOrVKbY82mOopaE8zBarJVgXF1AI_g",
+  authDomain:        "debate-timer-84877.firebaseapp.com",
+  databaseURL:       "https://debate-timer-84877-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "debate-timer-84877",
+  storageBucket:     "debate-timer-84877.firebasestorage.app",
+  messagingSenderId: "833707572035",
+  appId:             "1:833707572035:web:ecf41d924b984711e78df6"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const TOPICS = [
+  "花蓮要吸引更多移居者，還是先照顧現有居民？",
+  "花蓮的問題在於資源不足，還是連結不足？",
+  "花蓮適合長期生活，還是適合短期停留？",
+  "花蓮交通應該優先改善對外連結，還是先提升在地交通便利？",
+  "花蓮產業應該開放大型企業進駐，還是維持地方小型經濟體？",
+  "花蓮應該維持慢生活文化，還是追求更現代化的地方發展？",
+];
+
+// ══════════════════════════════════════════════════════════════
+// IDENTITY  (stored in localStorage)
+// ══════════════════════════════════════════════════════════════
+let deviceId = localStorage.getItem("debate_device_id");
+if (!deviceId) {
+  deviceId = "dev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  localStorage.setItem("debate_device_id", deviceId);
+}
+
+let nickname = localStorage.getItem("debate_nickname") || "";
+let currentVote = null;   // "正方" | "反方" | null
+let votingAllowed = true; // updated from Firebase debate/config/votingOpen
+
+// ══════════════════════════════════════════════════════════════
+// NICKNAME SCREEN
+// ══════════════════════════════════════════════════════════════
+const nickScreen  = document.getElementById("nickname-screen");
+const appScreen   = document.getElementById("app-screen");
+const nickInput   = document.getElementById("nick-input");
+const nickError   = document.getElementById("nick-error");
+const nickConfirm = document.getElementById("nick-confirm");
+
+function enterApp() {
+  nickScreen.style.display  = "none";
+  appScreen.style.display   = "flex";
+  document.getElementById("nick-name-label").textContent = nickname;
+  initFirebaseListeners();
+}
+
+if (nickname) {
+  enterApp();
+} else {
+  nickScreen.style.display = "flex";
+}
+
+nickConfirm.addEventListener("click", submitNickname);
+nickInput.addEventListener("keydown", e => { if (e.key === "Enter") submitNickname(); });
+
+function submitNickname() {
+  const val = nickInput.value.trim();
+  if (!val) { nickError.style.display = "block"; nickInput.focus(); return; }
+  nickname = val;
+  localStorage.setItem("debate_nickname", nickname);
+  enterApp();
+}
+
+// ══════════════════════════════════════════════════════════════
+// CHANGE NICKNAME
+// ══════════════════════════════════════════════════════════════
+const nickModal       = document.getElementById("nick-modal");
+const newNickInput    = document.getElementById("new-nick-input");
+
+document.getElementById("change-nick-btn").addEventListener("click", () => {
+  newNickInput.value = nickname;
+  nickModal.classList.add("open");
+  setTimeout(() => newNickInput.focus(), 50);
+});
+document.getElementById("nick-modal-cancel").addEventListener("click", () =>
+  nickModal.classList.remove("open"));
+document.getElementById("nick-modal-ok").addEventListener("click", applyNewNick);
+newNickInput.addEventListener("keydown", e => { if (e.key === "Enter") applyNewNick(); });
+
+function applyNewNick() {
+  const val = newNickInput.value.trim();
+  if (!val) return;
+  nickname = val;
+  localStorage.setItem("debate_nickname", nickname);
+  document.getElementById("nick-name-label").textContent = nickname;
+  nickModal.classList.remove("open");
+  showToast("暱稱已更新");
+}
+
+// ══════════════════════════════════════════════════════════════
+// TOPIC VOTE
+// ══════════════════════════════════════════════════════════════
+let myTopicVotes        = new Set(); // topic indices this device voted for
+let allTopicCounts      = [0,0,0,0,0,0];
+let tvCardsBuilt        = false;
+let tvListenersStarted  = false;
+let topicVotingAllowed  = true;
+
+function buildTopicCards() {
+  if (tvCardsBuilt) return; tvCardsBuilt = true;
+  const list = document.getElementById("tv-cards-list");
+  TOPICS.forEach((topic, i) => {
+    const card = document.createElement("div");
+    card.className = "tv-card"; card.id = `tvcard-${i}`;
+    card.innerHTML = `
+      <div class="tv-card-header">
+        <div class="tv-check">✓</div>
+        <span class="tv-num">${i + 1}.</span>
+        <span class="tv-text">${topic}</span>
+      </div>
+      <div class="tv-results">
+        <div class="tv-bar-bg"><div class="tv-bar-fill" id="tv-bar-${i}"></div></div>
+        <span class="tv-count-text" id="tv-cnt-${i}">0</span>
+      </div>`;
+    card.addEventListener("click", () => handleTopicVote(i));
+    list.appendChild(card);
+  });
+}
+
+function handleTopicVote(idx) {
+  if (!topicVotingAllowed) { showToast("投票時間已結束"); return; }
+  const isSelected = myTopicVotes.has(idx);
+  if (!isSelected && myTopicVotes.size >= 2) {
+    showToast("最多只能投 2 票，請先取消一個");
+    return;
+  }
+  const ref = db.ref(`debate/topicVotes/${deviceId}/${idx}`);
+  isSelected ? ref.remove() : ref.set(true);
+}
+
+function updateTopicClosedUI() {
+  const notice = document.getElementById("tv-closed-notice");
+  if (notice) notice.style.display = topicVotingAllowed ? "none" : "block";
+  TOPICS.forEach((_, i) => {
+    const card = document.getElementById(`tvcard-${i}`);
+    if (!card) return;
+    card.classList.toggle("tv-closed", !topicVotingAllowed);
+  });
+}
+
+function startTopicVoteListeners() {
+  if (tvListenersStarted) return; tvListenersStarted = true;
+
+  // Topic voting open/close (auto-closed by timer)
+  db.ref("debate/config/topicVotingOpen").on("value", snap => {
+    topicVotingAllowed = snap.val() !== false;
+    updateTopicClosedUI();
+  });
+
+  // Own votes
+  db.ref(`debate/topicVotes/${deviceId}`).on("value", snap => {
+    myTopicVotes = new Set();
+    const val = snap.val();
+    if (val) Object.keys(val).forEach(k => myTopicVotes.add(parseInt(k)));
+    syncTopicUI();
+  });
+
+  // All votes (for counts)
+  db.ref("debate/topicVotes").on("value", snap => {
+    allTopicCounts = [0,0,0,0,0,0];
+    snap.forEach(dSnap => {
+      dSnap.forEach(tSnap => {
+        const idx = parseInt(tSnap.key);
+        if (!isNaN(idx) && idx < 6) allTopicCounts[idx]++;
+      });
+    });
+    syncTopicCounts();
+  });
+}
+
+function syncTopicUI() {
+  const sec = document.getElementById("topic-vote-section");
+  document.getElementById("tv-my-count").textContent = myTopicVotes.size;
+  if (myTopicVotes.size > 0) sec.classList.add("tv-voted");
+  const full = myTopicVotes.size >= 2;
+  TOPICS.forEach((_, i) => {
+    const card = document.getElementById(`tvcard-${i}`);
+    if (!card) return;
+    const sel = myTopicVotes.has(i);
+    card.classList.toggle("tv-selected", sel);
+    card.classList.toggle("tv-full", full && !sel);
+  });
+}
+
+function syncTopicCounts() {
+  const total = allTopicCounts.reduce((a, b) => a + b, 0);
+  allTopicCounts.forEach((count, i) => {
+    const bar = document.getElementById(`tv-bar-${i}`);
+    const cnt = document.getElementById(`tv-cnt-${i}`);
+    if (!bar) return;
+    bar.style.width = (total > 0 ? Math.round(count / total * 100) : 0) + "%";
+    if (cnt) cnt.textContent = `${count}票`;
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// FIREBASE LISTENERS
+// ══════════════════════════════════════════════════════════════
+let commentsCache    = [];
+let likesCache       = {};
+const likingInFlight = new Set(); // prevent double-tap race condition
+
+function toggleLike(commentId) {
+  if (likingInFlight.has(commentId)) return; // already in-flight, ignore
+  likingInFlight.add(commentId);
+  const alreadyLiked = !!(likesCache[commentId] || {})[deviceId];
+  const ref = db.ref(`debate/likes/${commentId}/${deviceId}`);
+  (alreadyLiked ? ref.remove() : ref.set(true))
+    .catch(() => {}) // silent error
+    .finally(() => likingInFlight.delete(commentId));
+}
+
+function initFirebaseListeners() {
+  // Listen to current stage from admin
+  db.ref("debate/config/currentStage").on("value", snap => {
+    const stage    = snap.val();
+    const isTopic  = stage === "下期題目票選";
+    const voteEl   = document.getElementById("vote-section");
+    const cmtEl    = document.getElementById("comment-section");
+    const feedEl   = document.getElementById("feed-section");
+    const topicEl  = document.getElementById("topic-vote-section");
+
+    voteEl.style.display  = isTopic ? "none" : "";
+    cmtEl.style.display   = isTopic ? "none" : "";
+    feedEl.style.display  = isTopic ? "none" : "";
+    topicEl.style.display = isTopic ? "flex" : "none";
+
+    if (isTopic) {
+      buildTopicCards();
+      startTopicVoteListeners();
+    }
+  });
+
+  // Listen to voting open/close status
+  db.ref("debate/config/votingOpen").on("value", snap => {
+    votingAllowed = snap.val() !== false;
+    const notice = document.getElementById("vote-closed-notice");
+    const proBt  = document.getElementById("vote-pro");
+    const conBt  = document.getElementById("vote-con");
+    notice.style.display = votingAllowed ? "none" : "block";
+    proBt.disabled = !votingAllowed;
+    conBt.disabled = !votingAllowed;
+    proBt.style.opacity = votingAllowed ? "" : "0.4";
+    conBt.style.opacity = votingAllowed ? "" : "0.4";
+  });
+
+  // Listen to own vote
+  db.ref(`debate/votes/${deviceId}`).on("value", snap => {
+    const v = snap.val();
+    currentVote = v ? v.side : null;
+    updateVoteUI();
+  });
+
+  // Listen to all votes (for tally)
+  db.ref("debate/votes").on("value", snap => {
+    const votes = snap.val() || {};
+    let pro = 0, con = 0;
+    Object.values(votes).forEach(v => {
+      if (v.side === "正方") pro++;
+      else if (v.side === "反方") con++;
+    });
+    updateTally(pro, con);
+    updateAdminStats(pro, con);
+  });
+
+  // Listen to comments
+  db.ref("debate/comments").orderByChild("createdAt").on("value", snap => {
+    commentsCache = [];
+    snap.forEach(child => {
+      const c = child.val();
+      if (c && typeof c === 'object' && !c.deleted) commentsCache.push({ id: child.key, ...c });
+    });
+    renderFeed(commentsCache);
+  });
+
+  db.ref("debate/likes").on("value", snap => {
+    likesCache = snap.val() || {};
+    // Only patch like buttons — no full re-render
+    const feedList = document.getElementById("feed-list");
+    commentsCache.forEach(c => {
+      const item    = feedList.querySelector(`[data-id="${c.id}"]`);
+      if (!item) return;
+      const likeBtn = item.querySelector(".like-btn");
+      if (!likeBtn) return;
+      const n     = Object.keys(likesCache[c.id] || {}).length;
+      const liked = !!(likesCache[c.id] || {})[deviceId];
+      likeBtn.textContent = n > 0 ? `👍 ${n}` : "👍";
+      likeBtn.className   = "like-btn" + (liked ? " liked" : "");
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// VOTE
+// ══════════════════════════════════════════════════════════════
+document.getElementById("vote-pro").addEventListener("click", () => castVote("正方"));
+document.getElementById("vote-con").addEventListener("click", () => castVote("反方"));
+
+function castVote(side) {
+  if (!votingAllowed) { showToast("投票已關閉"); return; }
+  if (currentVote === side) return; // already selected
+  db.ref(`debate/votes/${deviceId}`).set({
+    nickname: nickname,
+    side:     side,
+    updatedAt: Date.now()
+  });
+  showToast(`已投票：${side}`);
+}
+
+function updateVoteUI() {
+  document.getElementById("vote-pro").classList.toggle("selected", currentVote === "正方");
+  document.getElementById("vote-con").classList.toggle("selected", currentVote === "反方");
+
+  const status = document.getElementById("my-vote-status");
+  if (currentVote) {
+    status.innerHTML = `你目前的立場：<strong>${currentVote}</strong>`;
+  } else {
+    status.innerHTML = "尚未投票";
+  }
+}
+
+function updateTally(pro, con) {
+  const total = pro + con;
+  document.getElementById("tally-pro-text").textContent   = `正方 ${pro}票`;
+  document.getElementById("tally-con-text").textContent   = `${con}票 反方`;
+  document.getElementById("tally-total-text").textContent = `共 ${total} 票`;
+
+  const proPct = total === 0 ? 50 : Math.round(pro / total * 100);
+  document.getElementById("tally-bar-pro").style.width = proPct + "%";
+  document.getElementById("tally-bar-con").style.width = (100 - proPct) + "%";
+}
+
+// ══════════════════════════════════════════════════════════════
+// COMMENT INPUT
+// ══════════════════════════════════════════════════════════════
+const textarea  = document.getElementById("comment-textarea");
+const charCount = document.getElementById("char-count");
+const sendBtn   = document.getElementById("send-btn");
+const MAX_LEN   = 100;
+
+textarea.addEventListener("input", () => {
+  const len = textarea.value.length;
+  charCount.textContent = `${len} / ${MAX_LEN}`;
+  charCount.className   = len >= MAX_LEN ? "over" : len >= 80 ? "warn" : "";
+  sendBtn.disabled      = len === 0 || len > MAX_LEN;
+});
+
+sendBtn.addEventListener("click", submitComment);
+textarea.addEventListener("keydown", e => {
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitComment();
+});
+
+async function submitComment() {
+  const text = textarea.value.trim();
+  if (!text || text.length > MAX_LEN) return;
+
+  sendBtn.disabled = true;
+  try {
+    await db.ref("debate/comments").push({
+      nickname:  nickname,
+      text:      text,
+      side:      currentVote || null,
+      createdAt: Date.now(),
+      deleted:   false
+    });
+    textarea.value = "";
+    charCount.textContent = "0 / 100";
+    charCount.className   = "";
+    showToast("留言已送出 ✓");
+  } catch(e) {
+    showToast("送出失敗，請重試");
+    sendBtn.disabled = false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// QUESTION MODAL — ask an anonymous question for 正方/反方, any time
+// ══════════════════════════════════════════════════════════════
+const questionFab   = document.getElementById("question-fab");
+const questionModal = document.getElementById("question-modal");
+const qmSidePicker  = document.getElementById("qm-side-picker");
+const qmForm        = document.getElementById("qm-form");
+const qmTargetName  = document.getElementById("qm-target-name");
+const qmTextarea    = document.getElementById("qm-textarea");
+const qmCharCount   = document.getElementById("qm-char-count");
+const qmSubmitBtn   = document.getElementById("qm-submit");
+let qmSide = null; // "正方" | "反方" | null
+
+function resetQuestionModal() {
+  qmSide = null;
+  qmForm.classList.remove("open");
+  qmSidePicker.querySelectorAll(".qm-side-btn").forEach(b => b.classList.remove("selected"));
+  qmTextarea.value = "";
+  qmCharCount.textContent = `0 / ${MAX_LEN}`;
+  qmCharCount.className = "";
+  qmSubmitBtn.disabled = true;
+}
+
+questionFab.addEventListener("click", () => {
+  resetQuestionModal();
+  questionModal.classList.add("open");
+});
+
+document.getElementById("qm-cancel").addEventListener("click", () => {
+  questionModal.classList.remove("open");
+});
+
+qmSidePicker.querySelectorAll(".qm-side-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    qmSide = btn.dataset.side;
+    qmSidePicker.querySelectorAll(".qm-side-btn").forEach(b => b.classList.remove("selected"));
+    btn.classList.add("selected");
+    qmTargetName.textContent = qmSide;
+    qmForm.classList.add("open");
+    qmSubmitBtn.disabled = qmTextarea.value.trim().length === 0;
+    qmTextarea.focus();
+  });
+});
+
+qmTextarea.addEventListener("input", () => {
+  const len = qmTextarea.value.length;
+  qmCharCount.textContent = `${len} / ${MAX_LEN}`;
+  qmCharCount.className   = len >= MAX_LEN ? "over" : len >= 80 ? "warn" : "";
+  qmSubmitBtn.disabled    = len === 0 || len > MAX_LEN || !qmSide;
+});
+
+qmSubmitBtn.addEventListener("click", submitQuestion);
+
+async function submitQuestion() {
+  const text = qmTextarea.value.trim();
+  if (!text || text.length > MAX_LEN || !qmSide) return;
+
+  qmSubmitBtn.disabled = true;
+  try {
+    await db.ref("debate/questions").push({
+      text:      text,
+      side:      qmSide,
+      createdAt: Date.now(),
+      drawn:     false
+    });
+    questionModal.classList.remove("open");
+    showToast("提問已送出 ✓");
+  } catch(e) {
+    showToast("送出失敗，請重試");
+    qmSubmitBtn.disabled = false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// COMMENT FEED
+// ══════════════════════════════════════════════════════════════
+function renderFeed(list) {
+  const feedList  = document.getElementById("feed-list");
+  const feedEmpty = document.getElementById("feed-empty");
+  const feedCount = document.getElementById("feed-count");
+
+  feedCount.textContent = list.length ? `${list.length} 則留言` : "";
+
+  if (list.length === 0) {
+    feedList.innerHTML = "";
+    feedList.appendChild(feedEmpty);
+    return;
+  }
+
+  feedList.innerHTML = "";
+  list.slice().reverse().forEach(c => {
+    const item = document.createElement("div");
+    item.className  = "feed-item " + (c.side === "正方" ? "pro" : c.side === "反方" ? "con" : "");
+    item.dataset.id = c.id;
+
+    const meta = document.createElement("div"); meta.className = "feed-meta";
+    const nick = document.createElement("span"); nick.className = "feed-nick";
+    nick.textContent = c.nickname || "匿名";
+    const time = document.createElement("span"); time.className = "feed-time";
+    time.textContent = fmtTs(c.createdAt);
+    meta.append(nick, time);
+
+    const text = document.createElement("div"); text.className = "feed-text";
+    text.textContent = c.text;
+
+    const likeCount = Object.keys(likesCache[c.id] || {}).length;
+    const liked     = !!(likesCache[c.id] || {})[deviceId];
+    const likeBtn   = document.createElement("button");
+    likeBtn.className   = "like-btn" + (liked ? " liked" : "");
+    likeBtn.textContent = likeCount > 0 ? `👍 ${likeCount}` : "👍";
+    likeBtn.addEventListener("click", () => toggleLike(c.id));
+
+    const likeRow = document.createElement("div");
+    likeRow.style.cssText = "display:flex; justify-content:flex-end; margin-top:6px;";
+    likeRow.appendChild(likeBtn);
+
+    item.append(meta, text, likeRow);
+    feedList.appendChild(item);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════════
+function fmtTs(ts) {
+  const d = new Date(ts);
+  return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+}
+
+let toastTimer = null;
+function showToast(msg) {
+  const toast = document.getElementById("toast");
+  toast.textContent = msg;
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove("show"), 2000);
+}
+
+// ══════════════════════════════════════════════════════════════
+// VOTE REVEALED — show tally when admin publishes results
+// ══════════════════════════════════════════════════════════════
+db.ref("debate/config/voteRevealed").on("value", snap => {
+  document.body.classList.toggle("vote-revealed", snap.val() === true);
+});
+
+// ══════════════════════════════════════════════════════════════
+// ADMIN LOGIN (vote.html side)
+// ══════════════════════════════════════════════════════════════
+const ADMIN_PASSWORD = "debate2026";
+let adminLoggedIn = false;
+
+const adminFab    = document.getElementById("admin-fab");
+const adminModal  = document.getElementById("admin-modal");
+const adminPwdIn  = document.getElementById("admin-pwd-input");
+const adminPwdErr = document.getElementById("admin-pwd-error");
+
+function setAdminLoggedIn(val) {
+  adminLoggedIn = val;
+  document.body.classList.toggle("admin-logged-in", val);
+}
+
+adminFab.addEventListener("click", () => {
+  if (adminLoggedIn) {
+    setAdminLoggedIn(false);
+    return;
+  }
+  adminPwdIn.value = "";
+  adminPwdErr.style.display = "none";
+  adminModal.classList.add("open");
+  setTimeout(() => adminPwdIn.focus(), 100);
+});
+
+document.getElementById("admin-modal-cancel").addEventListener("click", () => {
+  adminModal.classList.remove("open");
+});
+
+function attemptAdminLogin() {
+  if (adminPwdIn.value === ADMIN_PASSWORD) {
+    adminModal.classList.remove("open");
+    setAdminLoggedIn(true);
+  } else {
+    adminPwdErr.style.display = "block";
+    adminPwdIn.select();
+  }
+}
+
+document.getElementById("admin-modal-ok").addEventListener("click", attemptAdminLogin);
+adminPwdIn.addEventListener("keydown", e => { if (e.key === "Enter") attemptAdminLogin(); });
+
+document.getElementById("admin-logout-btn").addEventListener("click", () => {
+  setAdminLoggedIn(false);
+});
+
+// Update admin stats bar whenever votes change (reuses same listener data)
+function updateAdminStats(pro, con) {
+  const total = pro + con;
+  document.getElementById("adm-pro-text").textContent   = `正方 ${pro}票`;
+  document.getElementById("adm-con-text").textContent   = `${con}票 反方`;
+  document.getElementById("adm-total-text").textContent = `共 ${total} 票`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// FIREBASE CLEANUP  — detach all listeners on page unload
+// ══════════════════════════════════════════════════════════════
+window.addEventListener("beforeunload", () => {
+  db.ref("debate/config/votingOpen").off();
+  db.ref("debate/config/voteRevealed").off();
+  db.ref(`debate/votes/${deviceId}`).off();
+  db.ref("debate/votes").off();
+  db.ref("debate/comments").off();
+  db.ref("debate/likes").off();
+  db.ref(`debate/topicVotes/${deviceId}`).off();
+  db.ref("debate/topicVotes").off();
+  db.ref("debate/config/currentStage").off();
+  db.ref("debate/config/topicVotingOpen").off();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,2231 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生活之間：從住民到公民 - 辯論計時器</title>
+<style>
+  :root {
+    --navy:         #123B3C;
+    --navy-dk:      #0A2324;
+    --ground:       #0D2B2C;
+    --ground-glow:  #1B4644;
+    --cream:        #F3ECDA;
+    --yellow:       #D9A441;
+    --yel-dk:       #B8862F;
+    --coral:        #E8734F;
+    --cor-dk:       #C85A38;
+    --orange:       #7BAE7F;
+    --ink:          #1B2422;
+    --white:        #FFFFFF;
+    --warn:         #E2793B;
+    --alert:        #E8342A;
+    --gray-blue:    #8FAFA8;
+    --gray-blue-dk: #35504E;
+    --track:        rgba(243,236,218,0.16);
+    --sky:          #55AECE;
+    --sky-dk:       #3F8CAA;
+    --right-bg:     #091E1F;
+    --right-card:   #123836;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans CJK TC",
+                 "Microsoft JhengHei", "PingFang TC", sans-serif;
+    background: var(--navy);
+    overflow: hidden;
+  }
+
+  #app {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100vh;
+    min-height: 580px;
+  }
+
+  /* ── Title Bar ─────────────────────────────────────────────────────── */
+  #title-bar {
+    background: var(--navy);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    border-bottom: 2px solid var(--navy-dk);
+    gap: 12px;
+  }
+  #title-bar h1 {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: var(--cream);
+    letter-spacing: 0.02em;
+    line-height: 1.3;
+    min-width: 0;
+  }
+  #title-bar .title-main {
+    font-size: clamp(13px, 1.6vw, 20px);
+    font-weight: 800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #title-bar .title-sub {
+    font-size: clamp(11px, 1.2vw, 15px);
+    font-weight: 600;
+    opacity: 0.85;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #qr-btn {
+    background: var(--gray-blue-dk);
+    color: var(--cream);
+    border: none;
+    border-radius: 8px;
+    padding: 0 14px;
+    height: 36px;
+    font-size: 13px;
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  #qr-btn:hover { background: var(--gray-blue); }
+
+  /* ── Main Area ─────────────────────────────────────────────────────── */
+  #main {
+    display: grid;
+    grid-template-columns: 52fr 48fr;
+    overflow: hidden;
+  }
+
+  /* ════════════════════════════════════════
+     LEFT PANEL — Timer + Stage Info
+  ════════════════════════════════════════ */
+  #left-panel {
+    position: relative;
+    background:
+      radial-gradient(ellipse 900px 500px at 18% -12%, var(--ground-glow) 0%, transparent 60%),
+      linear-gradient(180deg, var(--ground) 0%, var(--navy-dk) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 16px 8px;
+    gap: 6px;
+    overflow: hidden;
+  }
+  #left-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  #left-panel > * { position: relative; z-index: 1; }
+
+  #svg-wrapper {
+    width: min(500px, 92%, calc(52vw - 32px));
+    aspect-ratio: 1;
+    flex-shrink: 1;
+    min-height: 0;
+  }
+  #svg-wrapper svg { width: 100%; height: 100%; overflow: visible; }
+
+  #time-text {
+    font-size: clamp(28px, 7vw, 62px);
+    font-weight: 900;
+    fill: var(--cream);
+    dominant-baseline: middle;
+    text-anchor: middle;
+    font-family: "SF Mono", "Consolas", "Courier New", monospace;
+    letter-spacing: -2px;
+    transition: fill 0.3s;
+  }
+  #overtime-hint {
+    font-size: clamp(12px, 2vw, 20px);
+    font-weight: 700;
+    fill: var(--alert);
+    dominant-baseline: middle;
+    text-anchor: middle;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  #overtime-hint.visible { opacity: 1; animation: overtime-pulse 1.6s ease-in-out infinite; }
+  @keyframes overtime-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
+  @media (prefers-reduced-motion: reduce) {
+    #overtime-hint.visible { animation: none; }
+  }
+  #arc-track    { fill: none; stroke: var(--track); }
+  #arc-progress { fill: none; stroke: var(--coral); stroke-linecap: round;
+                  filter: drop-shadow(0 0 8px rgba(0,0,0,0.4));
+                  transition: stroke 0.4s, stroke-dashoffset 0.25s linear; }
+
+  #side-label {
+    font-size: clamp(12px, 1.5vw, 17px);
+    font-weight: 700;
+    color: var(--coral);
+    transition: color 0.3s;
+    margin-top: -4px;
+  }
+
+  /* ── Free Debate Dual Circles ── */
+  #dual-circles-wrap {
+    display: none;
+    flex-direction: row;
+    gap: 10px;
+    width: min(500px, 92%, calc(52vw - 32px));
+    flex-shrink: 1;
+    min-height: 0;
+    align-items: center;
+  }
+  .dc-side {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    transition: opacity 0.3s;
+  }
+  .dc-side.inactive { opacity: 0.32; }
+  .dc-side svg { width: 100%; height: auto; overflow: visible; }
+  .dc-track    { fill: none; stroke: var(--track); }
+  .dc-progress { fill: none; stroke-linecap: round;
+                 filter: drop-shadow(0 0 6px rgba(0,0,0,0.4));
+                 transition: stroke-dashoffset 0.25s linear, stroke 0.4s; }
+  .dc-time {
+    font-size: 42px;
+    font-weight: 900;
+    fill: var(--cream);
+    dominant-baseline: middle;
+    text-anchor: middle;
+    font-family: "SF Mono", "Consolas", "Courier New", monospace;
+    letter-spacing: -1px;
+    transition: fill 0.3s;
+  }
+  .dc-name {
+    font-size: clamp(12px, 1.6vw, 16px);
+    font-weight: 800;
+  }
+  .dc-name-pro { color: var(--coral);  }
+  .dc-name-con { color: var(--orange); }
+  .dc-status {
+    font-size: clamp(10px, 1.2vw, 13px);
+    font-weight: 600;
+    color: var(--gray-blue);
+  }
+  #dc-pro.speaking .dc-status { color: var(--coral);  font-weight: 700; }
+  #dc-con.speaking .dc-status { color: var(--orange); font-weight: 700; }
+
+  #switch-side-btn {
+    display: none;
+    width: 100%;
+    height: 46px;
+    background: var(--navy);
+    color: var(--cream);
+    font-size: 14px;
+    font-weight: 800;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: background 0.15s, transform 0.1s;
+    flex-shrink: 0;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+  }
+  #switch-side-btn:hover:not(:disabled) { background: var(--gray-blue); transform: translateY(-1px); }
+  #switch-side-btn:disabled { background: var(--gray-blue); opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* Stage info */
+  #stage-info {
+    width: 100%;
+    border-top: 2px solid var(--track);
+    border-bottom: 2px solid var(--track);
+    padding: 12px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+  }
+  .info-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gray-blue);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  #stage-name {
+    font-size: clamp(20px, 3vw, 34px);
+    font-weight: 900;
+    color: var(--cream);
+    line-height: 1.2;
+  }
+  #progress-text {
+    font-size: clamp(12px, 1.4vw, 15px);
+    font-weight: 600;
+    color: var(--gray-blue);
+  }
+  #next-stage-text {
+    font-size: clamp(11px, 1.3vw, 14px);
+    color: var(--gray-blue);
+    line-height: 1.4;
+    margin-top: 6px;
+  }
+
+  /* Stage nav */
+  #stage-nav { width: 100%; display: flex; flex-direction: column; gap: 4px; }
+  #stage-select {
+    width: 100%;
+    padding: 7px 28px 7px 10px;
+    background: rgba(243,236,218,0.08);
+    color: var(--cream);
+    border: 2px solid var(--track);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23F3ECDA' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+  }
+  #stage-select option { background: var(--ground); color: var(--cream); }
+  #stage-select:focus { border-color: var(--coral); outline: none; }
+
+  /* Bottom info group — pushed to bottom */
+  #left-bottom {
+    width: 100%;
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  /* Dot bar */
+  #dot-bar {
+    width: 100%;
+    padding-top: 6px;
+    border-top: 2px solid var(--track);
+  }
+  #dots-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+  .dot-item {
+    display: flex; align-items: center; justify-content: center;
+    flex: 1; cursor: pointer; padding: 4px 0;
+  }
+  .dot-item:hover .dot { opacity: 0.65; transform: scale(1.25); }
+  .dot { border-radius: 50%; transition: all 0.35s ease; flex-shrink: 0; }
+  .dot.past    { width: 9px;  height: 9px;  background: var(--gray-blue); }
+  .dot.current { width: 18px; height: 18px; background: var(--coral);
+                 border: 3px solid var(--ground); box-shadow: 0 0 0 2px var(--cream); }
+  .dot.future  { width: 9px;  height: 9px;  background: transparent; border: 2px solid var(--gray-blue); }
+
+  /* ════════════════════════════════════════
+     RIGHT PANEL — Votes + Comments
+  ════════════════════════════════════════ */
+  #right-panel {
+    background: var(--right-bg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .section-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(243,236,218,0.55);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .section-badge {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--yellow);
+  }
+
+  /* ── Comment Section ── */
+  #comment-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 12px 18px 10px;
+  }
+  #comment-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+  }
+  #comment-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+
+  .action-btn {
+    background: rgba(255,255,255,0.07);
+    color: rgba(243,236,218,0.55);
+    border: none;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: all 0.15s;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    height: 40px;
+  }
+  .action-btn:hover { background: rgba(255,255,255,0.14); color: var(--cream); }
+  .action-btn.danger { background: rgba(232,52,42,0.25); color: #FF9999; }
+  .action-btn.danger:hover { background: rgba(232,52,42,0.45); }
+  a.action-btn { text-decoration: none; }
+  #export-btn, #clear-votes-btn, #toggle-vote-btn, #reset-topic-btn, #reveal-vote-btn, #draw-question-btn, #questions-admin-link { display: none; }
+  .admin-active #export-btn,
+  .admin-active #clear-votes-btn,
+  .admin-active #toggle-vote-btn,
+  .admin-active #reveal-vote-btn,
+  .admin-active #questions-admin-link { display: inline-flex; }
+  .admin-active.qna-active #draw-question-btn { display: inline-flex; }
+  /* Reset topic btn lives in topic-vote-display, toggled via JS */
+  #reset-topic-btn { height: 32px; padding: 0 12px; font-size: 12px; border-radius: 8px; }
+
+  /* ── Vote Result Overlay ── */
+  #vote-result-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: var(--navy-dk);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    position: fixed;
+  }
+  body.vote-revealed #vote-result-overlay { display: flex; }
+
+  #vro-label {
+    font-size: clamp(11px, 1.2vw, 14px);
+    font-weight: 700;
+    color: rgba(243,236,218,0.45);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  #vro-topic {
+    font-size: clamp(18px, 2.8vw, 36px);
+    font-weight: 800;
+    color: var(--cream);
+    text-align: center;
+    padding: 0 40px;
+  }
+  #vro-counts {
+    display: flex;
+    align-items: flex-end;
+    gap: clamp(40px, 8vw, 120px);
+  }
+  .vro-side { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .vro-side-name {
+    font-size: clamp(16px, 2.2vw, 26px);
+    font-weight: 800;
+    color: var(--cream);
+  }
+  .vro-num {
+    font-size: clamp(60px, 12vw, 130px);
+    font-weight: 900;
+    font-family: "SF Mono", monospace;
+    line-height: 1;
+  }
+  .vro-side.pro .vro-num { color: var(--coral); }
+  .vro-side.con .vro-num { color: var(--orange); }
+  .vro-pct {
+    font-size: clamp(18px, 3vw, 32px);
+    font-weight: 700;
+    color: rgba(243,236,218,0.6);
+  }
+  #vro-bar-wrap {
+    width: min(560px, 80vw);
+    height: 28px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.06);
+    display: flex;
+  }
+  #vro-bar-pro {
+    background: var(--coral);
+    height: 100%;
+    transition: width 1.2s cubic-bezier(.4,0,.2,1);
+    width: 50%;
+  }
+  #vro-bar-con {
+    background: var(--orange);
+    height: 100%;
+    flex: 1;
+    transition: width 1.2s cubic-bezier(.4,0,.2,1);
+  }
+  #vro-total {
+    font-size: clamp(13px, 1.6vw, 18px);
+    color: rgba(243,236,218,0.45);
+    font-weight: 600;
+  }
+  #vro-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: rgba(243,236,218,0.7);
+    border-radius: 50%;
+    font-size: 20px;
+    line-height: 1;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+  #vro-close-btn:hover { background: rgba(255,255,255,0.18); color: var(--cream); }
+
+  /* ── Question Draw Overlay ── */
+  #question-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 101;
+    background: var(--navy-dk);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+  }
+  body.question-revealed #question-overlay { display: flex; }
+
+  #qo-label {
+    font-size: clamp(11px, 1.2vw, 14px);
+    font-weight: 700;
+    color: rgba(243,236,218,0.45);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  #qo-side {
+    font-size: clamp(16px, 2.2vw, 24px);
+    font-weight: 800;
+    padding: 4px 22px;
+    border-radius: 999px;
+    color: var(--cream);
+  }
+  #qo-side.pro { background: var(--coral); }
+  #qo-side.con { background: var(--orange); }
+  #qo-text {
+    font-size: clamp(22px, 3.6vw, 46px);
+    font-weight: 800;
+    color: var(--cream);
+    text-align: center;
+    padding: 0 60px;
+    line-height: 1.4;
+    max-width: 1000px;
+  }
+  .qo-spinning #qo-close-btn { display: none; }
+  #qo-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: rgba(243,236,218,0.7);
+    border-radius: 50%;
+    font-size: 20px;
+    line-height: 1;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+  #qo-close-btn:hover { background: rgba(255,255,255,0.18); color: var(--cream); }
+
+  #comment-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding-right: 2px;
+  }
+  #comment-list::-webkit-scrollbar { width: 3px; }
+  #comment-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+
+  .comment-item {
+    background: rgba(255,255,255,0.04);
+    border-radius: 9px;
+    padding: 8px 11px;
+    border-left: 3px solid var(--gray-blue);
+    animation: fadeIn 0.25s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .comment-item.pro { border-left-color: var(--coral); }
+  .comment-item.con { border-left-color: var(--orange); }
+
+  .comment-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3px;
+  }
+  .comment-nick { font-size: 12px; font-weight: 700; color: var(--yellow); }
+  .comment-right { display: flex; align-items: center; gap: 6px; }
+  .comment-time { font-size: 11px; color: rgba(243,236,218,0.38); }
+  .comment-del {
+    background: none; border: none;
+    color: var(--alert); cursor: pointer;
+    font-size: 12px; line-height: 1;
+    padding: 1px 3px;
+    border-radius: 3px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.15s;
+    font-family: inherit;
+    box-shadow: none; height: auto;
+  }
+  .admin-active .comment-del { opacity: 0.5; pointer-events: auto; }
+  .admin-active .comment-del:hover { opacity: 1; }
+  .comment-text {
+    font-size: clamp(12px, 1.4vw, 14px);
+    color: var(--cream);
+    line-height: 1.5;
+    word-break: break-word;
+  }
+  .comment-likes {
+    font-size: 14px;
+    color: rgba(243,236,218,0.85);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    padding: 1px 7px;
+  }
+  #no-comments {
+    text-align: center;
+    color: rgba(243,236,218,0.25);
+    font-size: 13px;
+    padding: 40px 0;
+    pointer-events: none;
+  }
+
+  /* ── Topic Vote Display (index.html full-width) ── */
+  #topic-vote-display {
+    position: relative;
+    display: none;
+    flex-direction: column;
+    background:
+      radial-gradient(ellipse 1100px 500px at 50% -12%, var(--ground-glow) 0%, transparent 60%),
+      linear-gradient(180deg, var(--ground) 0%, var(--navy-dk) 100%);
+    padding: 20px 36px 24px;
+    overflow-y: auto;
+    gap: 0;
+  }
+  #topic-vote-display::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  #topic-vote-display > * { position: relative; z-index: 1; }
+  #main.topic-mode { grid-template-columns: 1fr; }
+  #main.topic-mode #left-panel,
+  #main.topic-mode #right-panel { display: none; }
+  #main.topic-mode #topic-vote-display { display: flex; }
+
+  #tv-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding-bottom: 14px;
+    border-bottom: 2px solid var(--track);
+    margin-bottom: 4px;
+  }
+  #tv-title {
+    font-size: clamp(16px, 2.2vw, 26px);
+    font-weight: 900;
+    color: var(--cream);
+  }
+  #tv-total {
+    font-size: clamp(12px, 1.4vw, 16px);
+    font-weight: 700;
+    color: var(--gray-blue);
+  }
+  #tv-countdown-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 2px solid var(--track);
+  }
+  #tv-countdown-label {
+    font-size: clamp(10px, 1vw, 13px);
+    font-weight: 700;
+    color: var(--gray-blue);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  #tv-countdown {
+    font-size: clamp(42px, 7vw, 86px);
+    font-weight: 900;
+    color: var(--cream);
+    font-family: "SF Mono", "Consolas", "Courier New", monospace;
+    letter-spacing: -3px;
+    line-height: 1;
+  }
+  #tv-countdown.warn  { color: var(--warn);  }
+  #tv-countdown.alert { color: var(--alert); }
+  #tv-countdown.done  {
+    color: var(--gray-blue);
+    font-size: clamp(20px, 3vw, 38px);
+    letter-spacing: 0;
+  }
+  .tv-opt {
+    padding: 13px 0;
+    border-bottom: 1px solid var(--track);
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .tv-opt:last-child { border-bottom: none; }
+  .tv-opt-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .tv-opt-num {
+    font-size: clamp(12px, 1.3vw, 15px);
+    font-weight: 900;
+    color: var(--gray-blue);
+    min-width: 22px;
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+  .tv-opt-text {
+    font-size: clamp(13px, 1.5vw, 18px);
+    font-weight: 700;
+    color: var(--cream);
+    flex: 1;
+    line-height: 1.4;
+  }
+  .tv-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-left: 32px;
+  }
+  .tv-bar-bg {
+    flex: 1;
+    height: 22px;
+    background: rgba(243,236,218,0.08);
+    border-radius: 11px;
+    overflow: hidden;
+  }
+  .tv-bar-fill {
+    height: 100%;
+    background: var(--gray-blue);
+    border-radius: 11px;
+    transition: width 0.8s cubic-bezier(.4,0,.2,1);
+    width: 0%;
+  }
+  .tv-opt.tv-leading .tv-bar-fill { background: var(--coral); }
+  .tv-votes-text {
+    font-size: clamp(11px, 1.2vw, 14px);
+    font-weight: 700;
+    color: var(--cream);
+    min-width: 80px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ── Button Bar ─────────────────────────────────────────────────────── */
+  #btn-bar {
+    background: var(--navy);
+    padding: 14px 0 6px;
+    border-top: 2px solid var(--navy-dk);
+  }
+  #btn-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 0 16px;
+  }
+  .btn-sep { width: 14px; }
+
+  button {
+    font-family: inherit;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    padding: 0 18px;
+    height: 44px;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+  }
+  button:hover  { filter: brightness(1.1); transform: translateY(-1px); }
+  button:active { transform: translateY(1px); filter: brightness(0.93); box-shadow: none; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; filter: none; box-shadow: none; }
+
+  .btn-nav   { background: var(--cream);       color: var(--ink); }
+  .btn-play  { background: var(--yellow);       color: var(--ink); font-size: 15px;
+               padding: 0 24px; min-width: 108px; }
+  .btn-play.running { background: var(--yel-dk); }
+  .btn-reset { background: var(--coral);        color: var(--white); }
+  .btn-plus  { background: var(--orange);       color: var(--white); padding: 0 12px; font-size: 13px; }
+  .btn-minus { background: var(--gray-blue);    color: var(--white); padding: 0 12px; font-size: 13px; }
+  .btn-fs    { background: var(--gray-blue-dk); color: var(--white); padding: 0 12px; font-size: 13px; }
+
+  #shortcut-hint {
+    text-align: center;
+    color: var(--gray-blue);
+    font-size: 11px;
+    padding: 5px 0 10px;
+    letter-spacing: 0.04em;
+  }
+
+  /* Fullscreen */
+  :fullscreen #app       { height: 100vh; }
+  :-webkit-full-screen #app { height: 100vh; }
+
+  /* ── Modals ─────────────────────────────────────────────────────────── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--navy);
+    border: 2px solid var(--gray-blue-dk);
+    border-radius: 18px;
+    padding: 28px 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 300px;
+    max-width: 90vw;
+  }
+  .modal-box h3 { color: var(--cream); font-size: 16px; font-weight: 800; }
+  .modal-input {
+    padding: 10px 14px;
+    border-radius: 9px;
+    border: 2px solid var(--gray-blue-dk);
+    background: var(--navy-dk);
+    color: var(--cream);
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    width: 100%;
+  }
+  .modal-input:focus { border-color: var(--yellow); }
+  .modal-error { color: #FF8888; font-size: 12px; display: none; }
+  .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+  .modal-btn {
+    padding: 9px 20px; border-radius: 9px; border: none;
+    font-family: inherit; font-weight: 700; font-size: 14px;
+    cursor: pointer; height: auto; box-shadow: none;
+  }
+  .modal-btn.confirm { background: var(--yellow); color: var(--ink); }
+  .modal-btn.cancel  { background: rgba(255,255,255,0.1); color: var(--cream); }
+
+  /* QR modal specifics */
+  #qr-modal .modal-box { align-items: center; }
+  #qr-modal h3 { text-align: center; }
+  #qrcode-container canvas, #qrcode-container img {
+    border-radius: 12px;
+    display: block;
+  }
+  #qr-url-text {
+    font-size: 11px;
+    color: rgba(243,236,218,0.55);
+    word-break: break-all;
+    text-align: center;
+    max-width: 260px;
+  }
+
+  /* ── RWD ────────────────────────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    html, body { overflow: auto; }
+    #app { grid-template-rows: auto 1fr auto; height: auto; min-height: 100vh; }
+    #title-bar { padding: 10px 14px; height: auto; }
+    #title-bar .title-main { font-size: clamp(12px, 3.5vw, 16px); white-space: normal; }
+    #title-bar .title-sub { font-size: clamp(10px, 2.8vw, 13px); white-space: normal; }
+    #main { grid-template-columns: 1fr; overflow: visible; }
+    #right-panel { min-height: 55vh; }
+    #comment-list { max-height: 280px; }
+    button { height: 40px; font-size: 13px; padding: 0 10px; }
+    .btn-play { padding: 0 16px; min-width: 90px; }
+    .btn-sep { width: 4px; }
+    #shortcut-hint { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Title Bar -->
+  <header id="title-bar">
+    <h1>
+      <span class="title-main">【社交沙龍】生活之間：從住民到公民 系列辯論活動第三場次</span>
+      <span class="title-sub">政府經費應該優先支持「改善在地生活支持系統」而非「打造產業專業環境」</span>
+    </h1>
+    <button id="qr-btn">📱 QR Code</button>
+  </header>
+
+  <!-- Main -->
+  <div id="main">
+
+    <!-- Left: Timer + Stage Info -->
+    <div id="left-panel">
+      <div id="svg-wrapper">
+        <svg viewBox="0 0 400 400">
+          <circle id="arc-track"    cx="200" cy="200" r="168" stroke-width="26"/>
+          <circle id="arc-progress" cx="200" cy="200" r="168" stroke-width="26"
+                  stroke-dasharray="1055.6" stroke-dashoffset="0"
+                  transform="rotate(-90 200 200)"/>
+          <text id="time-text"     x="200" y="195">00:00</text>
+          <text id="overtime-hint" x="200" y="255">超時中</text>
+        </svg>
+      </div>
+      <!-- Dual circles for 自由辯論 (hidden by default) -->
+      <div id="dual-circles-wrap">
+        <div class="dc-side" id="dc-pro">
+          <svg viewBox="0 0 200 200">
+            <circle class="dc-track"    cx="100" cy="100" r="80" stroke-width="16"/>
+            <circle class="dc-progress" cx="100" cy="100" r="80" stroke-width="16"
+                    stroke-dasharray="502.7" stroke-dashoffset="0"
+                    transform="rotate(-90 100 100)" id="dc-pro-arc"/>
+            <text class="dc-time" id="dc-pro-time" x="100" y="106">3:00</text>
+          </svg>
+          <div class="dc-name dc-name-pro">正方</div>
+          <div class="dc-status" id="dc-pro-status">待機</div>
+        </div>
+        <div class="dc-side" id="dc-con">
+          <svg viewBox="0 0 200 200">
+            <circle class="dc-track"    cx="100" cy="100" r="80" stroke-width="16"/>
+            <circle class="dc-progress" cx="100" cy="100" r="80" stroke-width="16"
+                    stroke-dasharray="502.7" stroke-dashoffset="0"
+                    transform="rotate(-90 100 100)" id="dc-con-arc"/>
+            <text class="dc-time" id="dc-con-time" x="100" y="106">3:00</text>
+          </svg>
+          <div class="dc-name dc-name-con">反方</div>
+          <div class="dc-status" id="dc-con-status">待機</div>
+        </div>
+      </div>
+      <div id="side-label">● 正方發言</div>
+      <button id="switch-side-btn">切換 → 換反方發言</button>
+
+      <div id="left-bottom">
+        <div id="stage-info">
+          <div class="info-label">目前階段</div>
+          <div id="stage-name">正方立論</div>
+          <div id="progress-text">階段 1 / 14</div>
+          <div style="height:5px"></div>
+          <div class="info-label">下一階段</div>
+          <div id="next-stage-text">▶ 反方立論（3 分鐘）</div>
+        </div>
+
+        <div id="stage-nav">
+          <div class="info-label">快速切換</div>
+          <select id="stage-select"></select>
+        </div>
+
+        <div id="dot-bar">
+          <div id="dots-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Comments only -->
+    <div id="right-panel">
+      <div id="comment-section">
+        <div id="comment-header">
+          <div class="section-header" style="margin-bottom:0">
+            <span class="section-title">即時留言</span>
+            <span class="section-badge" id="comment-count"></span>
+          </div>
+          <div id="comment-actions">
+            <button class="action-btn" id="toggle-vote-btn">停止投票</button>
+            <button class="action-btn danger" id="clear-votes-btn">清除投票</button>
+            <button class="action-btn" id="reveal-vote-btn">公布結果</button>
+            <button class="action-btn" id="draw-question-btn">🎲 抽選提問</button>
+            <a class="action-btn" id="questions-admin-link" href="questions.html" target="_blank" rel="noopener">🙋 提問管理</a>
+            <button class="action-btn" id="export-btn">匯出資料</button>
+            <button class="action-btn" id="admin-btn">管理員</button>
+          </div>
+        </div>
+        <div id="comment-list">
+          <div id="no-comments">留言將即時顯示於此</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Topic Vote Display (下期題目票選 stage) — full width -->
+    <div id="topic-vote-display">
+      <div id="tv-header">
+        <span id="tv-title">📊 下期題目票選</span>
+        <span id="tv-total">共 0 票</span>
+        <button class="action-btn danger" id="reset-topic-btn">重置票選</button>
+      </div>
+      <div id="tv-options-list"></div>
+      <div id="tv-countdown-wrap">
+        <span id="tv-countdown-label">剩餘時間</span>
+        <div id="tv-countdown">8:00</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Button Bar -->
+  <div id="btn-bar">
+    <div id="btn-inner">
+      <button class="btn-nav"   id="btn-prev">&lt;&lt; 上一階段</button>
+      <button class="btn-play"  id="btn-toggle">▶ 開始</button>
+      <button class="btn-nav"   id="btn-next">下一階段 &gt;&gt;</button>
+      <div class="btn-sep"></div>
+      <button class="btn-reset" id="btn-reset">重置</button>
+      <button class="btn-plus"  id="btn-p30">+30s</button>
+      <button class="btn-plus"  id="btn-p60">+60s</button>
+      <button class="btn-minus" id="btn-m30">−30s</button>
+      <button class="btn-minus" id="btn-m60">−60s</button>
+      <div class="btn-sep"></div>
+      <button class="btn-fs"    id="btn-fs">⛶ 全螢幕</button>
+    </div>
+    <div id="shortcut-hint">快捷鍵：空白鍵＝開始/暫停　　←→＝換段　　R＝重置　　F11＝全螢幕</div>
+  </div>
+
+</div>
+
+<!-- Vote Result Overlay -->
+<div id="vote-result-overlay">
+  <div id="vro-label">投票結果</div>
+  <div id="vro-topic">政府經費應該優先支持「改善在地生活支持系統」而非「打造產業專業環境」</div>
+  <div id="vro-counts">
+    <div class="vro-side pro">
+      <div class="vro-side-name">正方</div>
+      <div class="vro-num" id="pro-count">0</div>
+      <div class="vro-pct" id="pro-pct">—</div>
+    </div>
+    <div class="vro-side con">
+      <div class="vro-pct" id="con-pct">—</div>
+      <div class="vro-num" id="con-count">0</div>
+      <div class="vro-side-name">反方</div>
+    </div>
+  </div>
+  <div id="vro-bar-wrap">
+    <div id="vro-bar-pro"></div>
+    <div id="vro-bar-con"></div>
+  </div>
+  <div id="vro-total">共 0 票</div>
+  <button id="vro-close-btn">✕</button>
+</div>
+
+<!-- Question Draw Overlay -->
+<div id="question-overlay">
+  <div id="qo-label">觀眾提問</div>
+  <div id="qo-side">正方</div>
+  <div id="qo-text">提問內容</div>
+  <button id="qo-close-btn">✕</button>
+</div>
+
+<!-- Admin Modal -->
+<div class="modal-overlay" id="admin-modal">
+  <div class="modal-box">
+    <h3>管理員驗證</h3>
+    <input type="password" class="modal-input" id="admin-pwd" placeholder="輸入密碼" autocomplete="off"/>
+    <div class="modal-error" id="admin-error">密碼錯誤，請再試</div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" id="admin-cancel">取消</button>
+      <button class="modal-btn confirm" id="admin-confirm">確認</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal-overlay" id="export-modal">
+  <div class="modal-box" style="width:min(680px,94vw); max-height:88vh; overflow:hidden; display:flex; flex-direction:column;">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+      <h3>匯出資料</h3>
+      <button class="modal-btn cancel" id="export-copy-btn" style="font-size:13px; padding:6px 14px; height:auto;">複製全部</button>
+    </div>
+    <textarea id="export-textarea" readonly
+      style="flex:1; min-height:0; background:var(--navy-dk); color:var(--cream); border:1px solid var(--gray-blue-dk);
+             border-radius:10px; padding:14px; font-family:'SF Mono','Consolas','Courier New',monospace;
+             font-size:12px; line-height:1.7; resize:none; outline:none; overflow-y:auto;"></textarea>
+    <div id="export-copy-hint" style="font-size:12px; color:var(--yellow); text-align:center; min-height:18px;"></div>
+    <div class="modal-btns" style="flex-shrink:0;">
+      <button class="modal-btn cancel" id="export-close">關閉</button>
+    </div>
+  </div>
+</div>
+
+<!-- QR Code Modal -->
+<div class="modal-overlay" id="qr-modal">
+  <div class="modal-box">
+    <h3>參與者掃碼投票留言</h3>
+    <div id="qrcode-container"></div>
+    <div id="qr-url-text"></div>
+    <div class="modal-btns">
+      <button class="modal-btn confirm" id="qr-close">關閉</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<!-- QR Code generator -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// FIREBASE  —  修改這裡換成你自己的設定
+// ══════════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey:            "AIzaSyAt2bOrVKbY82mOopaE8zBarJVgXF1AI_g",
+  authDomain:        "debate-timer-84877.firebaseapp.com",
+  databaseURL:       "https://debate-timer-84877-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "debate-timer-84877",
+  storageBucket:     "debate-timer-84877.firebasestorage.app",
+  messagingSenderId: "833707572035",
+  appId:             "1:833707572035:web:ecf41d924b984711e78df6"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ══════════════════════════════════════════════════════════════
+// 管理員密碼  ← 請修改
+// ══════════════════════════════════════════════════════════════
+const ADMIN_PASSWORD = "debate2026";
+
+// ══════════════════════════════════════════════════════════════
+// STAGES
+// ══════════════════════════════════════════════════════════════
+const STAGES = [
+  ["正方一辯立論",           240],
+  ["反方一辯立論",           240],
+  ["正方二辯立論",           180],
+  ["反方二辯立論",           180],
+  ["正方二辯質詢反方一辯",   180],
+  ["反方二辯質詢正方一辯",   180],
+  ["正方三辯質詢反方二辯",   180],
+  ["反方三辯質詢正方二辯",   180],
+  ["觀眾提問正方",           180],
+  ["正方回應",               180],
+  ["觀眾提問反方",           180],
+  ["反方回應",               180],
+  ["正方三辯結辯",           180],
+  ["反方三辯結辯",           180],
+  ["觀眾投票",               600],
+  ["開放式討論",             900],
+  ["活動結束",                 0],
+];
+
+const TOPICS = [
+  "花蓮要吸引更多移居者，還是先照顧現有居民？",
+  "花蓮的問題在於資源不足，還是連結不足？",
+  "花蓮適合長期生活，還是適合短期停留？",
+  "花蓮交通應該優先改善對外連結，還是先提升在地交通便利？",
+  "花蓮產業應該開放大型企業進駐，還是維持地方小型經濟體？",
+  "花蓮應該維持慢生活文化，還是追求更現代化的地方發展？",
+];
+
+const CIRCUMFERENCE = 2 * Math.PI * 168;
+
+const cssVars = getComputedStyle(document.documentElement);
+const C = {
+  navy:     cssVars.getPropertyValue('--navy').trim(),
+  cream:    cssVars.getPropertyValue('--cream').trim(),
+  coral:    cssVars.getPropertyValue('--coral').trim(),
+  orange:   cssVars.getPropertyValue('--orange').trim(),
+  sky:      cssVars.getPropertyValue('--sky').trim(),
+  ink:      cssVars.getPropertyValue('--ink').trim(),
+  warn:     cssVars.getPropertyValue('--warn').trim(),
+  alert:    cssVars.getPropertyValue('--alert').trim(),
+  grayBlue: cssVars.getPropertyValue('--gray-blue').trim(),
+};
+
+// ── Timer state ───────────────────────────────────────────────
+let stageIndex     = 0;
+let stageTotalTime = STAGES[0][1];
+let timeLeft       = stageTotalTime;
+let isRunning      = false;
+let isOvertime     = false;
+let overtime       = 0;
+let tickInterval   = null;
+
+let runStart          = null;
+let runBaseLeft       = null;
+let runBaseIsOvertime = false;
+let runBaseOvertime   = 0;
+let lastDisplayedSec  = -1;
+let alarmPlayed       = false;
+
+// ── Free Debate state ─────────────────────────────────────────
+let fdProTime      = 180;
+let fdConTime      = 180;
+let fdActiveSide   = null;   // "pro" | "con" | null
+let fdRunBase      = 180;    // baseline time of active side when run started
+let fdAlarmPlayed  = false;
+let fdLastSec      = -1;
+
+// ── DOM refs ──────────────────────────────────────────────────
+const arcProgress   = document.getElementById("arc-progress");
+const timeText      = document.getElementById("time-text");
+const overtimeHint  = document.getElementById("overtime-hint");
+const sideLabel     = document.getElementById("side-label");
+const stageName     = document.getElementById("stage-name");
+const progressText  = document.getElementById("progress-text");
+const nextStageText = document.getElementById("next-stage-text");
+const stageSelect   = document.getElementById("stage-select");
+const dotsContainer = document.getElementById("dots-container");
+const btnToggle     = document.getElementById("btn-toggle");
+const commentList   = document.getElementById("comment-list");
+
+// ══════════════════════════════════════════════════════════════
+// AUDIO
+// ══════════════════════════════════════════════════════════════
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+function playTick() {
+  try {
+    ensureAudio();
+    const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.type = "square";
+    osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+    osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.08);
+  } catch(e) {}
+}
+function playAlarm() {
+  try {
+    ensureAudio();
+    const now = audioCtx.currentTime;
+    [0, 0.35, 0.70].forEach(off => {
+      const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.type = "sine";
+      [0,.05,.10,.15,.20].forEach((t,i) =>
+        osc.frequency.setValueAtTime(i%2===0?900:1100, now+off+t));
+      gain.gain.setValueAtTime(0.55, now+off);
+      gain.gain.exponentialRampToValueAtTime(0.001, now+off+0.28);
+      osc.start(now+off); osc.stop(now+off+0.28);
+    });
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════
+function stageRingColor(idx) {
+  const name = STAGES[idx ?? stageIndex][0];
+  if (name === "自由辯論")       return fdActiveSide === "con" ? C.orange : C.coral;
+  if (name.includes("討論"))     return C.grayBlue;
+  if (name.includes("反方"))     return C.orange;
+  if (name.includes("觀眾投票")) return C.sky;
+  return C.coral;
+}
+function stageSideLabel(idx) {
+  idx = idx ?? stageIndex;
+  if (idx >= STAGES.length - 1) return { text: "活動結束", color: C.cream };
+  const name = STAGES[idx][0];
+  if (name === "自由辯論") {
+    if (fdActiveSide === "con") return { text: "● 反方發言", color: C.orange };
+    if (fdActiveSide === "pro") return { text: "● 正方發言", color: C.coral  };
+    return { text: "● 自由辯論", color: C.cream };
+  }
+  if (name.includes("討論"))     return { text: "● 討論時間",  color: C.grayBlue };
+  if (name.includes("反方"))     return { text: "● 反方發言",  color: C.orange };
+  if (name.includes("正方"))     return { text: "● 正方發言",  color: C.coral  };
+  if (name.includes("觀眾投票")) return { text: "● 觀眾投票中", color: C.sky   };
+  return { text: "", color: C.cream };
+}
+function fmt(s) {
+  return `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+}
+function fmtStageTime(s) {
+  if (!s) return "";
+  const m = Math.floor(s/60), sec = s%60;
+  return sec === 0 ? `${m} 分鐘` : `${m}:${String(sec).padStart(2,"0")}`;
+}
+function fmtTs(ts) {
+  const d = new Date(ts);
+  return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+}
+
+function isFreeDebate() {
+  return STAGES[stageIndex][0] === "自由辯論";
+}
+
+function isTopicVote() {
+  return STAGES[stageIndex][0] === "下期題目票選";
+}
+
+// ── Build topic options list (called once) ────────────────────
+let tvBuilt = false;
+function buildTopicDisplay() {
+  if (tvBuilt) return; tvBuilt = true;
+  const list = document.getElementById("tv-options-list");
+  TOPICS.forEach((topic, i) => {
+    const opt = document.createElement("div");
+    opt.className = "tv-opt"; opt.id = `tv-opt-${i}`;
+    opt.innerHTML = `
+      <div class="tv-opt-row">
+        <span class="tv-opt-num">${i + 1}.</span>
+        <span class="tv-opt-text">${topic}</span>
+      </div>
+      <div class="tv-bar-row">
+        <div class="tv-bar-bg"><div class="tv-bar-fill" id="tv-bar-${i}"></div></div>
+        <span class="tv-votes-text" id="tv-votes-${i}">0 票</span>
+      </div>`;
+    list.appendChild(opt);
+  });
+}
+
+function showTopicDisplay() {
+  buildTopicDisplay();
+  document.getElementById("main").classList.add("topic-mode");
+}
+function hideTopicDisplay() {
+  document.getElementById("main").classList.remove("topic-mode");
+}
+
+// ── Render topic vote counts ──────────────────────────────────
+let tvCounts = [0,0,0,0,0,0];
+
+function renderTopicVotes() {
+  const total  = tvCounts.reduce((a, b) => a + b, 0);
+  const maxVal = Math.max(...tvCounts, 1);
+  document.getElementById("tv-total").textContent = `共 ${total} 票`;
+  tvCounts.forEach((count, i) => {
+    const bar   = document.getElementById(`tv-bar-${i}`);
+    const votes = document.getElementById(`tv-votes-${i}`);
+    const opt   = document.getElementById(`tv-opt-${i}`);
+    if (!bar) return;
+    const pct = total > 0 ? Math.round(count / total * 100) : 0;
+    bar.style.width = pct + "%";
+    votes.textContent = total > 0 ? `${count} 票 (${pct}%)` : "0 票";
+    opt.classList.toggle("tv-leading", count > 0 && count === maxVal);
+  });
+}
+
+const DC_CIRC = 2 * Math.PI * 80; // ≈ 502.655
+
+function showDualTimer() {
+  document.getElementById("svg-wrapper").style.display       = "none";
+  document.getElementById("side-label").style.display        = "none";
+  document.getElementById("dual-circles-wrap").style.display = "flex";
+  document.getElementById("switch-side-btn").style.display   = "block";
+  updateDualTimerDisplay();
+}
+
+function hideDualTimer() {
+  document.getElementById("svg-wrapper").style.display       = "";
+  document.getElementById("side-label").style.display        = "";
+  document.getElementById("dual-circles-wrap").style.display = "none";
+  document.getElementById("switch-side-btn").style.display   = "none";
+}
+
+function updateDualTimerDisplay() {
+  const total     = STAGES[stageIndex][1];
+  const switchBtn = document.getElementById("switch-side-btn");
+
+  function renderCircle(arc, timeEl, card, statusEl, t, isActive, color) {
+    const isEmpty = t === 0 && fdActiveSide !== null;
+    const isLow   = t <= 30 && t > 0;
+    timeEl.textContent            = fmt(t);
+    arc.style.strokeDashoffset    = DC_CIRC * (1 - (total > 0 ? t / total : 0));
+    arc.style.stroke              = isEmpty ? C.alert : isLow ? C.warn : color;
+    timeEl.style.fill             = isEmpty ? C.alert : isLow ? C.warn : C.cream;
+    card.className = "dc-side"
+      + (isActive && isRunning ? " speaking" : "")
+      + (!isActive && fdActiveSide !== null && t > 0 ? " inactive" : "");
+    statusEl.textContent = t === 0 && fdActiveSide !== null ? "時間結束"
+      : (isActive && isRunning ? "▶ 發言中" : "⏸ 待機");
+  }
+
+  renderCircle(
+    document.getElementById("dc-pro-arc"),
+    document.getElementById("dc-pro-time"),
+    document.getElementById("dc-pro"),
+    document.getElementById("dc-pro-status"),
+    fdProTime, fdActiveSide === "pro", C.coral
+  );
+  renderCircle(
+    document.getElementById("dc-con-arc"),
+    document.getElementById("dc-con-time"),
+    document.getElementById("dc-con"),
+    document.getElementById("dc-con-status"),
+    fdConTime, fdActiveSide === "con", C.orange
+  );
+
+  // Switch button
+  if (fdProTime === 0 && fdConTime === 0) {
+    switchBtn.textContent = "自由辯論結束";
+    switchBtn.disabled = true;
+  } else if (fdActiveSide === "con") {
+    switchBtn.textContent = "切換 → 換正方發言";
+    switchBtn.disabled = fdProTime === 0;
+  } else {
+    switchBtn.textContent = "切換 → 換反方發言";
+    switchBtn.disabled = fdConTime === 0;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// TIMER DISPLAY
+// ══════════════════════════════════════════════════════════════
+function updateDisplay() {
+  const total = STAGES.length - 1, idx = stageIndex;
+  stageName.textContent    = STAGES[idx][0];
+  progressText.textContent = idx < total ? `階段 ${idx+1} / ${total}` : "活動已結束";
+
+  if (!isFreeDebate()) {
+    const sl = stageSideLabel();
+    sideLabel.textContent = sl.text; sideLabel.style.color = sl.color;
+  }
+
+  const ni = idx + 1;
+  if (ni < STAGES.length) {
+    const nn = STAGES[ni][0], nt = STAGES[ni][1];
+    nextStageText.textContent = nn === "自由辯論" ? `▶ ${nn}（各 3 分鐘）`
+      : nt === 0 ? `▶ ${nn}` : `▶ ${nn}（${fmtStageTime(nt)}）`;
+  } else {
+    nextStageText.textContent = "—";
+  }
+
+  updateDots(); updateToggleBtn();
+
+  // Update topic vote countdown display
+  if (isTopicVote()) {
+    const cdEl = document.getElementById("tv-countdown");
+    if (cdEl) {
+      if (timeLeft === 0) {
+        cdEl.textContent = "投票結束";
+        cdEl.className = "done";
+      } else {
+        cdEl.textContent = fmt(timeLeft);
+        cdEl.className = timeLeft <= 30 ? "alert" : timeLeft <= 60 ? "warn" : "";
+      }
+    }
+  }
+
+  if (!isFreeDebate() && !isTopicVote()) {
+    if (isOvertime) {
+      timeText.textContent               = `+${fmt(overtime)}`;
+      timeText.style.fill                = C.alert;
+      arcProgress.style.stroke           = C.alert;
+      arcProgress.style.strokeDashoffset = CIRCUMFERENCE;
+      overtimeHint.classList.add("visible");
+    } else {
+      timeText.textContent = fmt(timeLeft);
+      overtimeHint.classList.remove("visible");
+      arcProgress.style.strokeDashoffset = CIRCUMFERENCE * (1 - (stageTotalTime > 0 ? timeLeft/stageTotalTime : 0));
+      const arcColor  = timeLeft === 0 ? C.alert : timeLeft <= 30 ? C.warn : stageRingColor();
+      const textColor = timeLeft === 0 ? C.alert : timeLeft <= 30 ? C.warn : C.cream;
+      arcProgress.style.stroke = arcColor;
+      timeText.style.fill      = textColor;
+    }
+  }
+}
+
+function updateToggleBtn() {
+  if (isFreeDebate()) {
+    const done = fdProTime === 0 && fdConTime === 0;
+    btnToggle.textContent = done ? "自由辯論結束" : isRunning ? "⏸ 暫停" : "▶ 開始";
+    btnToggle.disabled    = !isAdminMode || done;
+    btnToggle.classList.toggle("running", isRunning && !done);
+    return;
+  }
+  const isEnd = STAGES[stageIndex][1] === 0;
+  btnToggle.textContent = isEnd ? "活動結束" : isRunning ? "⏸ 暫停" : "▶ 開始";
+  btnToggle.disabled    = !isAdminMode || isEnd;
+  btnToggle.classList.toggle("running", isRunning && !isEnd);
+}
+
+function buildDots() {
+  dotsContainer.innerHTML = "";
+  for (let i = 0; i < STAGES.length - 1; i++) {
+    const item = document.createElement("div");
+    item.className = "dot-item"; item.title = STAGES[i][0];
+    const dot = document.createElement("div"); dot.className = "dot future";
+    item.appendChild(dot);
+    item.addEventListener("click", () => { stageIndex = i; loadStage(); });
+    dotsContainer.appendChild(item);
+  }
+}
+function updateDots() {
+  dotsContainer.querySelectorAll(".dot").forEach((dot, i) => {
+    dot.className = "dot " + (i < stageIndex ? "past" : i === stageIndex ? "current" : "future");
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// TIMER LOGIC  (Date.now() drift compensation)
+// ══════════════════════════════════════════════════════════════
+function tick() {
+  if (!isRunning) return;
+
+  if (isFreeDebate()) {
+    const elapsed = Math.floor((Date.now() - runStart) / 1000);
+    const remaining = Math.max(0, fdRunBase - elapsed);
+    if (fdActiveSide === "pro") fdProTime = remaining;
+    else if (fdActiveSide === "con") fdConTime = remaining;
+    if (remaining === 0 && !fdAlarmPlayed) {
+      playAlarm(); fdAlarmPlayed = true;
+      isRunning = false;
+      clearInterval(tickInterval); tickInterval = null;
+    }
+    if (remaining > 0 && remaining <= 10 && remaining !== fdLastSec) playTick();
+    fdLastSec = remaining;
+    updateDualTimerDisplay(); updateToggleBtn();
+    return;
+  }
+
+  const elapsed = Math.floor((Date.now() - runStart) / 1000);
+  let currentSec;
+  if (runBaseIsOvertime) {
+    overtime = runBaseOvertime + elapsed; timeLeft = 0; isOvertime = true;
+    currentSec = -(runBaseOvertime + elapsed);
+  } else {
+    const remaining = runBaseLeft - elapsed;
+    if (remaining > 0) {
+      timeLeft = remaining; isOvertime = false; overtime = 0; currentSec = remaining;
+    } else {
+      if (!alarmPlayed) {
+        playAlarm(); alarmPlayed = true;
+        // Topic vote: stop at 0, auto-close voting
+        if (isTopicVote()) {
+          isRunning = false;
+          clearInterval(tickInterval); tickInterval = null;
+          db.ref("debate/config/topicVotingOpen").set(false).catch(() => {});
+          updateDisplay(); updateToggleBtn();
+          return;
+        }
+      }
+      timeLeft = 0; isOvertime = true; overtime = -remaining; currentSec = remaining;
+    }
+  }
+  if (currentSec !== lastDisplayedSec) {
+    if (currentSec > 0 && currentSec <= 10) playTick();
+    lastDisplayedSec = currentSec;
+  }
+  updateDisplay();
+}
+
+function toggleTimer() {
+  if (isFreeDebate()) {
+    const done = fdProTime === 0 && fdConTime === 0;
+    if (done) return;
+    ensureAudio();
+    isRunning = !isRunning;
+    if (isRunning) {
+      if (fdActiveSide === null) fdActiveSide = "pro";
+      fdRunBase = fdActiveSide === "pro" ? fdProTime : fdConTime;
+      fdAlarmPlayed = false;
+      fdLastSec = fdRunBase;
+      runStart = Date.now();
+      tickInterval = setInterval(tick, 200);
+    } else {
+      clearInterval(tickInterval); tickInterval = null;
+    }
+    updateToggleBtn(); updateDualTimerDisplay();
+    return;
+  }
+  if (STAGES[stageIndex][1] === 0) return;
+  ensureAudio();
+  isRunning = !isRunning;
+  if (isRunning) {
+    runStart = Date.now(); runBaseLeft = timeLeft;
+    runBaseIsOvertime = isOvertime; runBaseOvertime = overtime;
+    lastDisplayedSec = isOvertime ? -overtime : timeLeft;
+    alarmPlayed = isOvertime;
+    tickInterval = setInterval(tick, 200);
+  } else {
+    clearInterval(tickInterval); tickInterval = null;
+  }
+  updateToggleBtn();
+}
+
+function resetTimer() {
+  clearInterval(tickInterval); tickInterval = null;
+  isRunning = false; overtime = 0; isOvertime = false;
+  if (isFreeDebate()) {
+    fdProTime = STAGES[stageIndex][1];
+    fdConTime = STAGES[stageIndex][1];
+    fdActiveSide = null; fdAlarmPlayed = false; fdLastSec = -1;
+    updateDualTimerDisplay(); updateToggleBtn();
+    return;
+  }
+  stageTotalTime = STAGES[stageIndex][1]; timeLeft = stageTotalTime;
+  updateDisplay();
+}
+
+function addTime(seconds) {
+  if (isFreeDebate()) {
+    if (!fdActiveSide) return;
+    if (fdActiveSide === "pro") fdProTime = Math.max(0, fdProTime + seconds);
+    else fdConTime = Math.max(0, fdConTime + seconds);
+    if (isRunning) {
+      fdRunBase = fdActiveSide === "pro" ? fdProTime : fdConTime;
+      runStart = Date.now();
+    }
+    updateDualTimerDisplay();
+    return;
+  }
+  if (seconds > 0) {
+    if (isOvertime) {
+      if (overtime >= seconds) { overtime -= seconds; }
+      else { const back = seconds - overtime; overtime = 0; isOvertime = false; timeLeft = back; stageTotalTime = back; }
+    } else { timeLeft += seconds; if (timeLeft > stageTotalTime) stageTotalTime = timeLeft; }
+  } else {
+    const d = Math.abs(seconds);
+    if (isOvertime) { overtime += d; }
+    else { timeLeft -= d; if (timeLeft <= 0) { overtime = -timeLeft; timeLeft = 0; isOvertime = true; } }
+  }
+  if (isRunning) {
+    runStart = Date.now(); runBaseLeft = timeLeft;
+    runBaseIsOvertime = isOvertime; runBaseOvertime = overtime;
+    lastDisplayedSec = isOvertime ? -overtime : timeLeft;
+  }
+  updateDisplay();
+}
+
+function loadStage() {
+  clearInterval(tickInterval); tickInterval = null;
+  isRunning = false; overtime = 0; isOvertime = false;
+  stageTotalTime = STAGES[stageIndex][1]; timeLeft = stageTotalTime;
+  stageSelect.value = stageIndex;
+  if (isFreeDebate()) {
+    fdProTime = STAGES[stageIndex][1];
+    fdConTime = STAGES[stageIndex][1];
+    fdActiveSide = null; fdAlarmPlayed = false; fdLastSec = -1;
+    showDualTimer();
+  } else {
+    hideDualTimer();
+    arcProgress.style.stroke = stageRingColor();
+  }
+  // Show/hide topic vote display
+  if (isTopicVote()) {
+    showTopicDisplay();
+    // Reset closed state so participants can vote again if stage reloaded
+    db.ref("debate/config/topicVotingOpen").set(true).catch(() => {});
+    // Reset countdown display
+    const cdEl = document.getElementById("tv-countdown");
+    if (cdEl) { cdEl.textContent = fmt(stageTotalTime || 480); cdEl.className = ""; }
+  } else {
+    hideTopicDisplay();
+  }
+  // Sync stage name to Firebase so vote.html knows current stage
+  db.ref("debate/config/currentStage").set(STAGES[stageIndex][0]).catch(() => {});
+
+  // Question draw button: only relevant during 觀眾提問正方/反方
+  const stageName = STAGES[stageIndex][0];
+  questionSide = stageName === "觀眾提問正方" ? "正方" : stageName === "觀眾提問反方" ? "反方" : null;
+  commentSection.classList.toggle("qna-active", !!questionSide);
+  const drawBtn = document.getElementById("draw-question-btn");
+  if (drawBtn) drawBtn.textContent = questionSide ? `🎲 抽選提問（${questionSide}）` : "🎲 抽選提問";
+
+  updateDisplay();
+}
+
+function nextStage() { if (stageIndex < STAGES.length - 1) { stageIndex++; loadStage(); } }
+function prevStage() { if (stageIndex > 0)                 { stageIndex--; loadStage(); } }
+
+// ══════════════════════════════════════════════════════════════
+// SELECT
+// ══════════════════════════════════════════════════════════════
+STAGES.forEach(([name], i) => {
+  const opt = document.createElement("option");
+  opt.value = i; opt.textContent = name;
+  stageSelect.appendChild(opt);
+});
+stageSelect.addEventListener("change", () => { stageIndex = +stageSelect.value; loadStage(); });
+
+// ══════════════════════════════════════════════════════════════
+// FIREBASE: VOTES
+// ══════════════════════════════════════════════════════════════
+db.ref("debate/votes").on("value", snap => {
+  const votes = snap.val() || {};
+  let pro = 0, con = 0;
+  Object.values(votes).forEach(v => {
+    if (v.side === "正方") pro++;
+    else if (v.side === "反方") con++;
+  });
+  const total = pro + con;
+
+  document.getElementById("pro-count").textContent = pro;
+  document.getElementById("con-count").textContent = con;
+  document.getElementById("vro-total").textContent = `共 ${total} 票`;
+
+  const pp = total === 0 ? 50 : Math.round(pro / total * 100);
+  const cp = 100 - pp;
+  document.getElementById("pro-pct").textContent   = total === 0 ? "—" : pp + "%";
+  document.getElementById("con-pct").textContent   = total === 0 ? "—" : cp + "%";
+  document.getElementById("vro-bar-pro").style.width = pp + "%";
+  document.getElementById("vro-bar-con").style.width = cp + "%";
+});
+
+// ══════════════════════════════════════════════════════════════
+// FIREBASE: COMMENTS
+// ══════════════════════════════════════════════════════════════
+let isAdminMode = false;
+let commentsCache = [];
+let likesCache    = {};
+let questionSide  = null; // "正方" | "反方" | null — derived from current stage
+let questionsCache = {};  // id -> {nickname, text, side, drawn} from debate/questions
+
+db.ref("debate/comments").orderByChild("createdAt").on("value", snap => {
+  commentsCache = [];
+  snap.forEach(child => {
+    const c = child.val();
+    if (c && typeof c === 'object' && !c.deleted) commentsCache.push({ id: child.key, ...c });
+  });
+  renderComments(commentsCache);
+});
+
+db.ref("debate/likes").on("value", snap => {
+  likesCache = snap.val() || {};
+  // Only patch like badges — no full re-render
+  commentsCache.forEach(c => {
+    const item = commentList.querySelector(`[data-id="${c.id}"]`);
+    if (!item) return;
+    const right = item.querySelector(".comment-right");
+    const old   = right.querySelector(".comment-likes");
+    if (old) old.remove();
+    const n = Object.keys(likesCache[c.id] || {}).length;
+    if (n > 0) {
+      const el = document.createElement("span");
+      el.className   = "comment-likes";
+      el.textContent = `👍 ${n}`;
+      right.insertBefore(el, right.firstChild);
+    }
+  });
+});
+
+// ── FIREBASE: TOPIC VOTES ──────────────────────────────────────
+db.ref("debate/topicVotes").on("value", snap => {
+  tvCounts = [0,0,0,0,0,0];
+  snap.forEach(deviceSnap => {
+    deviceSnap.forEach(topicSnap => {
+      const idx = parseInt(topicSnap.key);
+      if (!isNaN(idx) && idx >= 0 && idx < 6) tvCounts[idx]++;
+    });
+  });
+  if (isTopicVote()) renderTopicVotes();
+});
+
+function renderComments(list) {
+  document.getElementById("comment-count").textContent = list.length ? `${list.length} 則` : "";
+
+  if (list.length === 0) {
+    commentList.innerHTML = "<div id='no-comments'>留言將即時顯示於此</div>";
+    return;
+  }
+
+  const atBottom = commentList.scrollHeight - commentList.scrollTop - commentList.clientHeight < 80;
+  commentList.innerHTML = "";
+
+  list.forEach(c => {
+    const item = document.createElement("div");
+    item.className = "comment-item " + (c.side === "正方" ? "pro" : c.side === "反方" ? "con" : "");
+    item.dataset.id = c.id;
+
+    const meta = document.createElement("div"); meta.className = "comment-meta";
+    const nick = document.createElement("span"); nick.className = "comment-nick";
+    nick.textContent = c.nickname || "匿名";
+
+    const right = document.createElement("div"); right.className = "comment-right";
+    const time  = document.createElement("span"); time.className = "comment-time";
+    time.textContent = fmtTs(c.createdAt);
+    const del   = document.createElement("button"); del.className = "comment-del";
+    del.textContent = "✕"; del.title = "刪除留言";
+    del.addEventListener("click", () => {
+      if (confirm(`刪除「${c.nickname}」的留言？`))
+        db.ref(`debate/comments/${c.id}`).update({ deleted: true });
+    });
+
+    const likeCount = Object.keys(likesCache[c.id] || {}).length;
+    if (likeCount > 0) {
+      const likeEl = document.createElement("span");
+      likeEl.className   = "comment-likes";
+      likeEl.textContent = `👍 ${likeCount}`;
+      right.append(likeEl);
+    }
+    right.append(time, del);
+    meta.append(nick, right);
+
+    const text = document.createElement("div"); text.className = "comment-text";
+    text.textContent = c.text;
+
+    item.append(meta, text);
+    commentList.appendChild(item);
+  });
+
+  if (isAdminMode) commentList.parentElement.classList.add("admin-active");
+  if (atBottom) commentList.scrollTop = commentList.scrollHeight;
+}
+
+function deleteComment(id) {
+  db.ref(`debate/comments/${id}`).update({ deleted: true });
+}
+
+// ══════════════════════════════════════════════════════════════
+// ADMIN MODE
+// ══════════════════════════════════════════════════════════════
+const adminModal = document.getElementById("admin-modal");
+const adminPwd   = document.getElementById("admin-pwd");
+const adminError = document.getElementById("admin-error");
+const adminBtn   = document.getElementById("admin-btn");
+const commentSection = document.getElementById("right-panel");
+
+// ── Enable / disable all admin-gated controls ─────────────────
+function setControlsEnabled(on) {
+  ["btn-prev", "btn-next", "btn-reset", "btn-p30", "btn-p60", "btn-m30", "btn-m60"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.disabled = !on;
+  });
+  stageSelect.disabled = !on;
+  // Dot bar: block pointer events when not admin
+  dotsContainer.querySelectorAll(".dot-item").forEach(d => {
+    d.style.pointerEvents = on ? "" : "none";
+    d.style.cursor        = on ? "" : "default";
+  });
+  // Switch-side btn (free debate)
+  const ssBtn = document.getElementById("switch-side-btn");
+  if (ssBtn && !on) ssBtn.disabled = true;
+  // Reset topic votes btn
+  document.getElementById("reset-topic-btn").style.display = on ? "inline-flex" : "none";
+  // Toggle btn respects isAdminMode via updateToggleBtn()
+  updateToggleBtn();
+}
+
+adminBtn.addEventListener("click", () => {
+  if (isAdminMode) {
+    // Stop timer before logging out
+    if (isRunning) {
+      clearInterval(tickInterval); tickInterval = null;
+      isRunning = false;
+    }
+    isAdminMode = false;
+    adminBtn.textContent = "管理員";
+    adminBtn.classList.remove("danger");
+    commentSection.classList.remove("admin-active");
+    setControlsEnabled(false);
+  } else {
+    adminPwd.value = ""; adminError.style.display = "none";
+    adminModal.classList.add("open");
+    setTimeout(() => adminPwd.focus(), 50);
+  }
+});
+
+document.getElementById("admin-confirm").addEventListener("click", confirmAdmin);
+document.getElementById("admin-cancel").addEventListener("click", () => adminModal.classList.remove("open"));
+adminPwd.addEventListener("keydown", e => { if (e.key === "Enter") confirmAdmin(); });
+
+function confirmAdmin() {
+  if (adminPwd.value === ADMIN_PASSWORD) {
+    isAdminMode = true;
+    adminBtn.textContent = "離開管理員";
+    adminBtn.classList.add("danger");
+    commentSection.classList.add("admin-active");
+    adminModal.classList.remove("open");
+    setControlsEnabled(true);
+  } else {
+    adminError.style.display = "block";
+    adminPwd.select();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// VOTE REVEAL (admin only)
+// ══════════════════════════════════════════════════════════════
+let voteRevealed = false;
+
+db.ref("debate/config/voteRevealed").on("value", snap => {
+  voteRevealed = snap.val() === true;
+  document.body.classList.toggle("vote-revealed", voteRevealed);
+  const btn = document.getElementById("reveal-vote-btn");
+  btn.textContent = voteRevealed ? "取消公布" : "公布結果";
+  btn.classList.toggle("danger", voteRevealed);
+});
+
+document.getElementById("reveal-vote-btn").addEventListener("click", () => {
+  db.ref("debate/config/voteRevealed").set(!voteRevealed);
+});
+document.getElementById("vro-close-btn").addEventListener("click", () => {
+  db.ref("debate/config/voteRevealed").set(false);
+});
+
+// ══════════════════════════════════════════════════════════════
+// QUESTION DRAW (admin only) — 觀眾提問正方/反方
+// ══════════════════════════════════════════════════════════════
+db.ref("debate/questions").on("value", snap => {
+  questionsCache = snap.val() || {};
+});
+
+db.ref("debate/config/questionRevealed").on("value", snap => {
+  document.body.classList.toggle("question-revealed", snap.val() === true);
+});
+
+db.ref("debate/config/selectedQuestion").on("value", snap => {
+  const q = snap.val();
+  if (!q) return;
+  document.getElementById("qo-side").textContent = q.side;
+  document.getElementById("qo-side").className   = q.side === "正方" ? "pro" : "con";
+  document.getElementById("qo-text").textContent = q.text;
+});
+
+let drawSpinTimer = null;
+
+document.getElementById("draw-question-btn").addEventListener("click", () => {
+  if (!questionSide || drawSpinTimer) return;
+  const candidates = Object.entries(questionsCache)
+    .filter(([, q]) => q && q.side === questionSide && !q.drawn && !q.hidden);
+  if (candidates.length === 0) {
+    alert(`目前沒有${questionSide}的未抽提問`);
+    return;
+  }
+
+  const overlay = document.getElementById("question-overlay");
+  const sideEl  = document.getElementById("qo-side");
+  const textEl  = document.getElementById("qo-text");
+  overlay.classList.add("qo-spinning");
+  document.body.classList.add("question-revealed");
+
+  let ticks = 0;
+  const maxTicks = 14;
+  drawSpinTimer = setInterval(() => {
+    const [, q] = candidates[Math.floor(Math.random() * candidates.length)];
+    sideEl.textContent = q.side;
+    sideEl.className   = q.side === "正方" ? "pro" : "con";
+    textEl.textContent = q.text;
+    ticks++;
+    if (ticks >= maxTicks) {
+      clearInterval(drawSpinTimer);
+      drawSpinTimer = null;
+      overlay.classList.remove("qo-spinning");
+      const [finalId, finalQ] = candidates[Math.floor(Math.random() * candidates.length)];
+      db.ref(`debate/questions/${finalId}`).update({ drawn: true }).catch(() => {});
+      db.ref("debate/config/selectedQuestion").set({
+        id: finalId, text: finalQ.text, side: finalQ.side
+      }).catch(() => {});
+      db.ref("debate/config/questionRevealed").set(true).catch(() => {});
+    }
+  }, 80);
+});
+
+document.getElementById("qo-close-btn").addEventListener("click", () => {
+  db.ref("debate/config/questionRevealed").set(false);
+});
+
+// ══════════════════════════════════════════════════════════════
+// VOTE OPEN / CLOSE (admin only)
+// ══════════════════════════════════════════════════════════════
+let votingOpen = true;
+
+db.ref("debate/config/votingOpen").on("value", snap => {
+  votingOpen = snap.val() !== false;
+  const btn = document.getElementById("toggle-vote-btn");
+  btn.textContent = votingOpen ? "停止投票" : "開放投票";
+  btn.classList.toggle("danger", votingOpen);
+});
+
+document.getElementById("toggle-vote-btn").addEventListener("click", () => {
+  db.ref("debate/config/votingOpen").set(!votingOpen);
+});
+
+// ══════════════════════════════════════════════════════════════
+// CLEAR VOTES (admin only)
+// ══════════════════════════════════════════════════════════════
+document.getElementById("clear-votes-btn").addEventListener("click", () => {
+  if (confirm("確定要清除所有投票紀錄嗎？此操作無法復原。")) {
+    db.ref("debate/votes").once("value", snap => {
+      const updates = {};
+      snap.forEach(child => { updates[child.key] = null; });
+      if (Object.keys(updates).length > 0) {
+        db.ref("debate/votes").update(updates);
+      }
+    });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+// RESET TOPIC VOTES (admin only)
+// ══════════════════════════════════════════════════════════════
+document.getElementById("reset-topic-btn").addEventListener("click", () => {
+  if (confirm("確定要清除所有票選紀錄嗎？此操作無法復原。")) {
+    db.ref("debate/topicVotes").set(null).catch(() => {});
+    // Also re-open voting in case it was auto-closed
+    db.ref("debate/config/topicVotingOpen").set(true).catch(() => {});
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════════════════════
+function buildExportText(data) {
+  const now     = new Date();
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+  const timeStr = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
+  const lines   = [];
+
+  lines.push("═══════════════════════════════════════");
+  lines.push("  生活之間：從住民到公民  辯論活動記錄");
+  lines.push(`  匯出時間：${dateStr} ${timeStr}`);
+  lines.push("═══════════════════════════════════════");
+  lines.push("");
+
+  // 投票
+  const vList = Object.values(data.votes || {});
+  const pro   = vList.filter(v => v.side === "正方").length;
+  const con   = vList.filter(v => v.side === "反方").length;
+  lines.push("【即時投票結果】");
+  lines.push(`  正方：${pro} 票`);
+  lines.push(`  反方：${con} 票`);
+  lines.push(`  總計：${pro + con} 票`);
+  lines.push("");
+
+  // 留言
+  const comments = data.comments || {};
+  const likes    = data.likes    || {};
+  const cList = Object.entries(comments)
+    .filter(([, c]) => !c.deleted)
+    .sort(([, a], [, b]) => a.createdAt - b.createdAt);
+  lines.push(`【留言紀錄】（共 ${cList.length} 則）`);
+  if (cList.length === 0) {
+    lines.push("  （無留言）");
+  } else {
+    cList.forEach(([key, c]) => {
+      const d         = new Date(c.createdAt);
+      const ts        = `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+      const who       = c.nickname || "匿名";
+      const tag       = c.side ? `（${c.side}）` : "";
+      const likeCount = likes[key] ? Object.keys(likes[key]).length : 0;
+      const likeStr   = likeCount > 0 ? `  👍${likeCount}` : "";
+      lines.push(`  [${ts}] ${who}${tag}：${c.text}${likeStr}`);
+    });
+  }
+  lines.push("");
+
+  // 票選
+  const tvCounts = [0,0,0,0,0,0];
+  Object.values(data.topicVotes || {}).forEach(dev => {
+    if (typeof dev === "object") Object.keys(dev).forEach(idx => {
+      const i = parseInt(idx);
+      if (!isNaN(i) && i < 6) tvCounts[i]++;
+    });
+  });
+  const tvTotal = tvCounts.reduce((a,b) => a+b, 0);
+  lines.push("【下期題目票選結果】");
+  TOPICS.forEach((topic, i) => {
+    const pct = tvTotal > 0 ? Math.round(tvCounts[i] / tvTotal * 100) : 0;
+    lines.push(`  ${i+1}. ${topic}`);
+    lines.push(`     → ${tvCounts[i]} 票（${pct}%）`);
+  });
+  lines.push("");
+  lines.push("═══════════════════════════════════════");
+  return lines.join("\n");
+}
+
+document.getElementById("export-btn").addEventListener("click", () => {
+  Promise.all([
+    db.ref("debate/votes").once("value"),
+    db.ref("debate/comments").once("value"),
+    db.ref("debate/likes").once("value"),
+    db.ref("debate/topicVotes").once("value"),
+  ]).then(([votesSnap, commentsSnap, likesSnap, topicSnap]) => {
+    const data = {
+      votes:       votesSnap.val()   || {},
+      comments:    commentsSnap.val()|| {},
+      likes:       likesSnap.val()   || {},
+      topicVotes:  topicSnap.val()   || {},
+    };
+    const text = buildExportText(data);
+    const ta   = document.getElementById("export-textarea");
+    ta.value   = text;
+    document.getElementById("export-copy-hint").textContent = "";
+    document.getElementById("export-modal").classList.add("open");
+    setTimeout(() => { ta.focus(); ta.select(); }, 80);
+  }).catch(err => {
+    alert("讀取資料失敗：" + err.message);
+  });
+});
+
+document.getElementById("export-close").addEventListener("click", () =>
+  document.getElementById("export-modal").classList.remove("open"));
+
+document.getElementById("export-copy-btn").addEventListener("click", () => {
+  const ta   = document.getElementById("export-textarea");
+  const hint = document.getElementById("export-copy-hint");
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ta.value).then(() => {
+      hint.textContent = "✓ 已複製到剪貼簿";
+      setTimeout(() => { hint.textContent = ""; }, 2500);
+    }).catch(() => {
+      ta.select(); hint.textContent = "請手動 Ctrl+A → Ctrl+C 複製";
+    });
+  } else {
+    ta.select();
+    document.execCommand("copy");
+    hint.textContent = "✓ 已複製到剪貼簿";
+    setTimeout(() => { hint.textContent = ""; }, 2500);
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+// QR CODE
+// ══════════════════════════════════════════════════════════════
+let qrGenerated = false;
+document.getElementById("qr-btn").addEventListener("click", () => {
+  const voteUrl = new URL("vote.html", window.location.href).href;
+  document.getElementById("qr-url-text").textContent = voteUrl;
+  if (!qrGenerated) {
+    new QRCode(document.getElementById("qrcode-container"), {
+      text: voteUrl, width: 200, height: 200,
+      colorDark: "#0A2324", colorLight: "#F3ECDA",
+      correctLevel: QRCode.CorrectLevel.M
+    });
+    qrGenerated = true;
+  }
+  document.getElementById("qr-modal").classList.add("open");
+});
+document.getElementById("qr-close").addEventListener("click", () =>
+  document.getElementById("qr-modal").classList.remove("open"));
+
+// ══════════════════════════════════════════════════════════════
+// BUTTONS & KEYBOARD
+// ══════════════════════════════════════════════════════════════
+document.getElementById("switch-side-btn").addEventListener("click", () => {
+  if (!isFreeDebate()) return;
+  const newSide = fdActiveSide === "con" ? "pro" : "con";
+  const newTime = newSide === "pro" ? fdProTime : fdConTime;
+  if (newTime === 0) return;
+  fdActiveSide = newSide;
+  fdAlarmPlayed = false;
+  if (isRunning) {
+    fdRunBase = newTime;
+    runStart  = Date.now();
+    fdLastSec = newTime;
+  }
+  updateDualTimerDisplay();
+});
+
+document.getElementById("btn-prev").addEventListener("click",   prevStage);
+document.getElementById("btn-toggle").addEventListener("click", toggleTimer);
+document.getElementById("btn-next").addEventListener("click",   nextStage);
+document.getElementById("btn-reset").addEventListener("click",  resetTimer);
+document.getElementById("btn-p30").addEventListener("click", () => addTime(30));
+document.getElementById("btn-p60").addEventListener("click", () => addTime(60));
+document.getElementById("btn-m30").addEventListener("click", () => addTime(-30));
+document.getElementById("btn-m60").addEventListener("click", () => addTime(-60));
+
+const btnFs = document.getElementById("btn-fs");
+btnFs.addEventListener("click", () => {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+  else document.exitFullscreen().catch(()=>{});
+});
+document.addEventListener("fullscreenchange", () => {
+  btnFs.textContent = document.fullscreenElement ? "✕ 離開全螢幕" : "⛶ 全螢幕";
+});
+
+document.addEventListener("keydown", e => {
+  if (document.activeElement === stageSelect) return;
+  if (document.querySelector(".modal-overlay.open")) {
+    if (e.key === "Escape") document.querySelectorAll(".modal-overlay").forEach(m => m.classList.remove("open"));
+    return;
+  }
+  if (!isAdminMode) return; // all shortcuts require admin login
+  switch(e.key) {
+    case " ":          e.preventDefault(); toggleTimer(); break;
+    case "ArrowRight": e.preventDefault(); nextStage();   break;
+    case "ArrowLeft":  e.preventDefault(); prevStage();   break;
+    case "r": case "R": resetTimer(); break;
+    case "F11":
+      e.preventDefault();
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+      else document.exitFullscreen().catch(()=>{});
+      break;
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+// FIREBASE CLEANUP  — detach all listeners on page unload
+// ══════════════════════════════════════════════════════════════
+window.addEventListener("beforeunload", () => {
+  db.ref("debate/votes").off();
+  db.ref("debate/comments").off();
+  db.ref("debate/likes").off();
+  db.ref("debate/config/votingOpen").off();
+  db.ref("debate/config/voteRevealed").off();
+  db.ref("debate/topicVotes").off();
+  db.ref("debate/config/currentStage").off();
+  db.ref("debate/questions").off();
+  db.ref("debate/config/questionRevealed").off();
+  db.ref("debate/config/selectedQuestion").off();
+});
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+arcProgress.style.strokeDasharray  = CIRCUMFERENCE;
+arcProgress.style.strokeDashoffset = 0;
+buildDots();
+setControlsEnabled(false); // all controls locked until admin login
+updateDisplay();
+</script>
+</body>
+</html>

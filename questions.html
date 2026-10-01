@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>提問管理 — 辯論活動</title>
+<style>
+  :root {
+    --navy:      #123B3C;
+    --navy-dk:   #0A2324;
+    --navy-lt:   #1D5F5E;
+    --cream:     #F3ECDA;
+    --yellow:    #D9A441;
+    --coral:     #E8734F;
+    --orange:    #7BAE7F;
+    --ink:       #1B2422;
+    --muted:     rgba(243,236,218,0.45);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html { background: var(--navy-dk); min-height: 100%; }
+  body {
+    font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans CJK TC",
+                 "Microsoft JhengHei", "PingFang TC", sans-serif;
+    color: var(--cream);
+    min-height: 100vh;
+    background: var(--navy-dk);
+  }
+
+  /* ── Login Screen ── */
+  #login-screen {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 24px;
+  }
+  #login-screen h1 { font-size: 20px; font-weight: 800; }
+  #login-pwd {
+    width: min(280px, 80vw);
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--cream);
+    font-size: 15px;
+    text-align: center;
+    outline: none;
+  }
+  #login-error { font-size: 12px; color: #FF9999; display: none; }
+  #login-btn {
+    width: min(280px, 80vw);
+    background: var(--yellow);
+    color: var(--ink);
+    border: none;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 15px;
+    font-weight: 800;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  body.logged-in #login-screen { display: none; }
+
+  /* ── App ── */
+  #app { display: none; max-width: 920px; margin: 0 auto; padding: 24px 16px 60px; }
+  body.logged-in #app { display: block; }
+
+  #page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  #page-header h1 { font-size: 18px; font-weight: 800; }
+  #logout-btn {
+    background: rgba(255,255,255,0.08);
+    color: var(--cream);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  #stats-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  #stats-bar strong { color: var(--cream); font-size: 15px; }
+  #clear-all-btn {
+    margin-left: auto;
+    background: rgba(232,52,42,0.25);
+    color: #FF9999;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  #clear-all-btn:hover { background: rgba(232,52,42,0.45); }
+
+  .q-columns { display: flex; gap: 16px; }
+  @media (max-width: 700px) { .q-columns { flex-direction: column; } }
+  .q-column { flex: 1; background: rgba(255,255,255,0.04); border-radius: 14px; padding: 16px; min-width: 0; }
+  .q-column-title { font-size: 14px; font-weight: 800; margin-bottom: 12px; }
+  .q-column-title.pro { color: var(--coral); }
+  .q-column-title.con { color: var(--orange); }
+
+  .q-item {
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .q-item.drawn { opacity: 0.5; }
+  .q-text { flex: 1; font-size: 14px; line-height: 1.5; word-break: break-word; }
+  .q-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .q-badge {
+    font-size: 11px;
+    background: rgba(217,164,65,0.2);
+    color: var(--yellow);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .q-del {
+    background: none;
+    border: none;
+    color: rgba(243,236,218,0.4);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px;
+  }
+  .q-del:hover { color: #FF7777; }
+  .q-empty { color: var(--muted); font-size: 13px; text-align: center; padding: 24px 0; }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <h1>🔒 提問管理</h1>
+  <input type="password" id="login-pwd" placeholder="輸入管理員密碼" autocomplete="off"/>
+  <div id="login-error">密碼錯誤</div>
+  <button id="login-btn">登入</button>
+</div>
+
+<div id="app">
+  <div id="page-header">
+    <h1>觀眾提問管理</h1>
+    <button id="logout-btn">登出</button>
+  </div>
+
+  <div id="stats-bar">
+    <span>正方 <strong id="stat-pro">0</strong> 則</span>
+    <span>反方 <strong id="stat-con">0</strong> 則</span>
+    <span>已抽 <strong id="stat-drawn">0</strong> 則</span>
+    <button id="clear-all-btn">清空全部提問</button>
+  </div>
+
+  <div class="q-columns">
+    <div class="q-column">
+      <div class="q-column-title pro">正方提問</div>
+      <div id="pro-list"></div>
+    </div>
+    <div class="q-column">
+      <div class="q-column-title con">反方提問</div>
+      <div id="con-list"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// FIREBASE
+// ══════════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey:            "AIzaSyAt2bOrVKbY82mOopaE8zBarJVgXF1AI_g",
+  authDomain:        "debate-timer-84877.firebaseapp.com",
+  databaseURL:       "https://debate-timer-84877-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "debate-timer-84877",
+  storageBucket:     "debate-timer-84877.firebasestorage.app",
+  messagingSenderId: "833707572035",
+  appId:             "1:833707572035:web:ecf41d924b984711e78df6"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ══════════════════════════════════════════════════════════════
+// LOGIN GATE
+// ══════════════════════════════════════════════════════════════
+const ADMIN_PASSWORD = "debate2026";
+const loginPwd   = document.getElementById("login-pwd");
+const loginError = document.getElementById("login-error");
+
+function attemptLogin() {
+  if (loginPwd.value === ADMIN_PASSWORD) {
+    document.body.classList.add("logged-in");
+    initFirebaseListeners();
+  } else {
+    loginError.style.display = "block";
+    loginPwd.select();
+  }
+}
+document.getElementById("login-btn").addEventListener("click", attemptLogin);
+loginPwd.addEventListener("keydown", e => { if (e.key === "Enter") attemptLogin(); });
+document.getElementById("logout-btn").addEventListener("click", () => {
+  document.body.classList.remove("logged-in");
+  db.ref("debate/questions").off();
+});
+
+// ══════════════════════════════════════════════════════════════
+// QUESTIONS LIST
+// ══════════════════════════════════════════════════════════════
+let questionsCache = {};
+
+function initFirebaseListeners() {
+  db.ref("debate/questions").on("value", snap => {
+    questionsCache = snap.val() || {};
+    render();
+  });
+}
+
+function render() {
+  const visible = Object.entries(questionsCache)
+    .filter(([, q]) => q && !q.hidden)
+    .sort((a, b) => (a[1].createdAt || 0) - (b[1].createdAt || 0));
+
+  const pro = visible.filter(([, q]) => q.side === "正方");
+  const con = visible.filter(([, q]) => q.side === "反方");
+
+  document.getElementById("stat-pro").textContent   = pro.length;
+  document.getElementById("stat-con").textContent   = con.length;
+  document.getElementById("stat-drawn").textContent = visible.filter(([, q]) => q.drawn).length;
+
+  renderList("pro-list", pro);
+  renderList("con-list", con);
+}
+
+function renderList(elId, entries) {
+  const el = document.getElementById(elId);
+  el.innerHTML = "";
+  if (entries.length === 0) {
+    el.innerHTML = "<div class='q-empty'>尚無提問</div>";
+    return;
+  }
+  entries.forEach(([id, q]) => {
+    const item = document.createElement("div");
+    item.className = "q-item" + (q.drawn ? " drawn" : "");
+
+    const text = document.createElement("div");
+    text.className = "q-text";
+    text.textContent = q.text;
+
+    const meta = document.createElement("div");
+    meta.className = "q-meta";
+    if (q.drawn) {
+      const badge = document.createElement("span");
+      badge.className = "q-badge";
+      badge.textContent = "已抽";
+      meta.appendChild(badge);
+    }
+    const del = document.createElement("button");
+    del.className = "q-del";
+    del.textContent = "✕";
+    del.title = "刪除提問";
+    del.addEventListener("click", () => {
+      if (confirm("刪除這則提問？")) {
+        db.ref(`debate/questions/${id}`).update({ hidden: true }).catch(() => {});
+      }
+    });
+    meta.appendChild(del);
+
+    item.append(text, meta);
+    el.appendChild(item);
+  });
+}
+
+document.getElementById("clear-all-btn").addEventListener("click", () => {
+  if (!confirm("確定要清空所有提問嗎？此操作無法復原。")) return;
+  const updates = {};
+  Object.entries(questionsCache).forEach(([id, q]) => {
+    if (q && !q.hidden) updates[`${id}/hidden`] = true;
+  });
+  if (Object.keys(updates).length > 0) {
+    db.ref("debate/questions").update(updates).catch(() => {});
+  }
+});
+
+window.addEventListener("beforeunload", () => {
+  db.ref("debate/questions").off();
+});
+</script>
+</body>
+</html>
