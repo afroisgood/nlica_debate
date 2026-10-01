@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Deploy
 
 ```bash
-git add index.html vote.html
+git add index.html vote.html questions.html assets/
 git commit -m "..."
 git push origin main   # GitHub Pages auto-deploys from main branch
 ```
@@ -27,6 +27,12 @@ Changes are live within ~1 minute of push. No build or CI step.
 | `index.html` | Admin / main display — shown on the presenter's screen. Controls timer, manages stages, displays live votes and comments, draws/reveals audience questions. |
 | `vote.html` | Participant page — opened on phones via QR code. Submits votes, comments, likes, topic ballot votes, and anonymous questions for 正方/反方. |
 | `questions.html` | Standalone admin page (separate URL, own password gate) for moderating submitted questions — not linked from index.html. |
+
+### Visual theme
+
+All three pages share the 「漫畫爆炸」(comic pop) theme: cream halftone paper background, 3–5px black borders, hard offset shadows, skewed labels. Colors are CSS custom properties in each file's `:root` (`--red` 正方, `--blue` 反方, `--yellow` accent, `--ink`). The header logo is `assets/title.webp` (event key visual, transparent background). Fonts load from Google Fonts: Noto Sans TC (text) and Bungee (digits).
+
+In `index.html`, JS reads `--cream` / `--coral` / `--orange` / `--sky` / `--warn` / `--alert` / `--gray-blue` via `getComputedStyle` for timer ring and side-label colors, so those names are kept as aliases of the theme colors.
 
 ### Firebase Realtime Database (compat SDK 10.12.0)
 
