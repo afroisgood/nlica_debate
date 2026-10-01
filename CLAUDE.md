@@ -32,6 +32,8 @@ Changes are live within ~1 minute of push. No build or CI step.
 
 All three pages share the 「漫畫爆炸」(comic pop) theme: cream halftone paper background, 3–5px black borders, hard offset shadows, skewed labels. Colors are CSS custom properties in each file's `:root` (`--red` 正方, `--blue` 反方, `--yellow` accent, `--ink`). The header logo is `assets/title.webp` (event key visual, transparent background). Fonts load from Google Fonts: Noto Sans TC (text) and Bungee (digits).
 
+`index.html` layout (matches the design mockup): header = series name / title logo / stage chip (`#progress-text`) + QR button; left panel = stage banner → timer → control buttons → stage dots → next-stage line, plus an admin-only `#admin-tools` row (stage dropdown, ±60, fullscreen) shown via `body.admin-mode` (toggled in `setControlsEnabled()`); right panel = live vote bar (`#vote-card`, updated in the `debate/votes` listener) + comment panel.
+
 In `index.html`, JS reads `--cream` / `--coral` / `--orange` / `--sky` / `--warn` / `--alert` / `--gray-blue` via `getComputedStyle` for timer ring and side-label colors, so those names are kept as aliases of the theme colors.
 
 ### Firebase Realtime Database (compat SDK 10.12.0)

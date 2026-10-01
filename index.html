@@ -54,54 +54,57 @@
 
   #app {
     display: grid;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto 1fr;
     height: 100vh;
-    min-height: 580px;
+    min-height: 600px;
   }
 
   /* ── Title Bar ─────────────────────────────────────────────────────── */
   #title-bar {
     background: var(--white);
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
-    padding: 8px 24px;
+    padding: 6px 28px;
     border-bottom: 5px solid var(--ink);
-    gap: 12px;
+    gap: 16px;
   }
-  #title-bar h1 {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    justify-content: center;
-    line-height: 0;
-  }
+  #title-left { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .title-series { font-size: clamp(12px, 1.1vw, 15px); font-weight: 900; letter-spacing: 0.06em; }
+  .title-series-sub { font-size: clamp(11px, 0.9vw, 13px); font-weight: 700; color: var(--muted); }
+  #title-bar h1 { line-height: 0; display: flex; justify-content: center; }
   #title-img {
-    height: clamp(56px, 10vh, 112px);
+    height: clamp(56px, 11vh, 118px);
     max-width: 100%;
     object-fit: contain;
     transform: rotate(-2deg);
+  }
+  #title-right { display: flex; align-items: center; justify-content: flex-end; gap: 14px; }
+  #progress-text {
+    font-family: var(--font-num);
+    font-size: clamp(13px, 1.4vw, 20px);
+    background: var(--ink);
+    color: var(--yellow);
+    padding: 6px 14px;
+    transform: rotate(3deg);
+    white-space: nowrap;
   }
 
   #qr-btn {
     background: var(--yellow);
     color: var(--ink);
-    border: 3px solid var(--ink);
-    border-radius: 0;
-    padding: 0 14px;
     height: 44px;
+    padding: 0 14px;
     font-size: 14px;
-    font-weight: 900;
-    box-shadow: var(--shadow-sm);
     flex-shrink: 0;
   }
 
   /* ── Main Area ─────────────────────────────────────────────────────── */
   #main {
     display: grid;
-    grid-template-columns: 52fr 48fr;
-    gap: 22px;
-    padding: 18px 24px 14px;
+    grid-template-columns: 1.35fr 1fr;
+    gap: 32px;
+    padding: 22px 32px 26px;
     overflow: hidden;
   }
 
@@ -116,17 +119,18 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 12px 18px 10px;
-    gap: 6px;
+    justify-content: center;
+    padding: 20px 24px 16px;
+    gap: 12px;
     overflow: hidden;
     min-height: 0;
   }
 
   #svg-wrapper {
-    width: min(460px, 88%, calc(52vw - 60px));
+    height: min(400px, 40vh, 36vw);
+    transition: height 0.2s;
     aspect-ratio: 1;
-    flex-shrink: 1;
-    min-height: 0;
+    flex-shrink: 0;
   }
   #svg-wrapper svg { width: 100%; height: 100%; overflow: visible; }
 
@@ -163,7 +167,7 @@
     font-weight: 900;
     color: var(--coral);
     transition: color 0.3s;
-    margin-top: -2px;
+    margin-top: -4px;
   }
 
   /* ── Free Debate Dual Circles ── */
@@ -171,9 +175,9 @@
     display: none;
     flex-direction: row;
     gap: 14px;
-    width: min(500px, 92%, calc(52vw - 60px));
-    flex-shrink: 1;
-    min-height: 0;
+    width: min(520px, 92%);
+    height: min(260px, 32vh);
+    flex-shrink: 0;
     align-items: center;
   }
   .dc-side {
@@ -186,7 +190,7 @@
     transition: opacity 0.3s;
   }
   .dc-side.inactive { opacity: 0.32; }
-  .dc-side svg { width: 100%; height: auto; overflow: visible; }
+  .dc-side svg { width: 100%; height: 100%; max-height: min(200px, 24vh); overflow: visible; }
   .dc-face     { fill: var(--white); stroke: var(--ink); stroke-width: 4; }
   .dc-track    { fill: none; stroke: var(--track); }
   .dc-progress { fill: none; stroke-linecap: butt;
@@ -219,7 +223,7 @@
 
   #switch-side-btn {
     display: none;
-    width: 100%;
+    width: min(420px, 100%);
     height: 48px;
     background: var(--yellow);
     color: var(--ink);
@@ -229,16 +233,20 @@
   }
   #switch-side-btn:disabled { background: var(--white); }
 
-  /* Stage info */
-  #stage-info {
-    width: 100%;
-    border-top: 3px solid var(--ink);
-    padding: 10px 0 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  /* Stage banner (top of left panel) */
+  #stage-name {
+    font-size: clamp(22px, 2.6vw, 38px);
+    font-weight: 900;
+    color: var(--white);
+    background: var(--red);
+    border: 4px solid var(--ink);
+    box-shadow: var(--shadow);
+    padding: 6px 30px;
+    transform: skew(-8deg);
+    line-height: 1.25;
     text-align: center;
-    gap: 4px;
+    max-width: 100%;
+    flex-shrink: 0;
   }
   .info-label {
     font-size: 12px;
@@ -246,37 +254,35 @@
     color: var(--white);
     background: var(--ink);
     padding: 1px 8px;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
   }
-  #stage-name {
-    font-size: clamp(22px, 3vw, 36px);
-    font-weight: 900;
-    color: var(--white);
-    background: var(--red);
-    border: 4px solid var(--ink);
-    box-shadow: var(--shadow-sm);
-    padding: 2px 22px;
-    transform: skew(-8deg);
-    line-height: 1.25;
-    margin: 4px 0 2px;
-  }
-  #progress-text {
-    font-size: clamp(12px, 1.4vw, 15px);
-    font-weight: 700;
-    color: var(--muted);
-  }
+  #next-stage-row { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
   #next-stage-text {
-    font-size: clamp(12px, 1.3vw, 15px);
+    font-size: clamp(12px, 1.2vw, 15px);
     font-weight: 700;
     color: var(--ink);
-    line-height: 1.4;
   }
 
-  /* Stage nav */
-  #stage-nav { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+  /* Controls under the timer */
+  #btn-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  .btn-sep { width: 4px; }
+
+  /* Admin-only tools row */
+  #admin-tools { display: none; gap: 8px; align-items: center; width: min(560px, 100%); flex-shrink: 0; }
+  body.admin-mode #admin-tools { display: flex; }
+  body.admin-mode #svg-wrapper { height: min(380px, 33vh, 34vw); }
   #stage-select {
-    width: 100%;
-    height: 44px;
+    flex: 1;
+    min-width: 0;
+    height: 40px;
     padding: 0 32px 0 12px;
     background-color: var(--white);
     color: var(--ink);
@@ -294,20 +300,11 @@
     background-position: right 12px center;
   }
   #stage-select:disabled { opacity: 0.5; cursor: not-allowed; }
-  #stage-select:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
-
-  /* Bottom info group — pushed to bottom */
-  #left-bottom {
-    width: 100%;
-    margin-top: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    flex-shrink: 0;
-  }
+  #stage-select:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+  #admin-tools button { height: 40px; font-size: 13px; padding: 0 12px; box-shadow: 3px 3px 0 var(--ink); }
 
   /* Dot bar */
-  #dot-bar { width: 100%; padding-top: 4px; }
+  #dot-bar { width: min(560px, 100%); flex-shrink: 0; }
   #dots-container {
     display: flex;
     align-items: center;
@@ -328,13 +325,52 @@
      RIGHT PANEL — Votes + Comments
   ════════════════════════════════════════ */
   #right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+    overflow: visible;
+    min-height: 0;
+  }
+  .panel {
     background: var(--white);
     border: var(--line);
     box-shadow: 8px 8px 0 var(--ink);
+  }
+
+  /* Live vote bar */
+  #vote-card { padding: 16px 20px 18px; display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; }
+  .panel-head { display: flex; justify-content: space-between; align-items: center; }
+  #live-vote-total { font-size: 14px; font-weight: 900; }
+  #live-vote-bar {
     display: flex;
-    flex-direction: column;
+    height: 52px;
+    border: var(--line);
+    background: var(--blue);
     overflow: hidden;
-    min-height: 0;
+  }
+  #live-bar-pro {
+    width: 50%;
+    background: var(--red);
+    border-right: 4px solid var(--ink);
+    display: flex;
+    align-items: center;
+    transition: width 0.8s cubic-bezier(.4,0,.2,1);
+    min-width: 0;
+  }
+  #live-pct-pro, #live-pct-con {
+    color: var(--white);
+    font-weight: 900;
+    font-size: clamp(15px, 1.5vw, 20px);
+    white-space: nowrap;
+    padding: 0 14px;
+  }
+  #live-bar-con { flex: 1; display: flex; align-items: center; justify-content: flex-end; min-width: 0; }
+  .live-badge {
+    font-family: var(--font-num);
+    font-size: 13px;
+    background: var(--ink);
+    color: var(--yellow);
+    padding: 2px 10px;
   }
 
   .section-header {
@@ -365,18 +401,20 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    padding: 14px 18px 12px;
+    padding: 16px 20px 14px;
     min-height: 0;
   }
   #comment-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 12px;
     flex-shrink: 0;
   }
   #comment-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+  .admin-active #comment-actions { width: 100%; justify-content: flex-start; }
 
   .action-btn {
     background: var(--white);
@@ -751,22 +789,7 @@
     flex-shrink: 0;
   }
 
-  /* ── Button Bar ─────────────────────────────────────────────────────── */
-  #btn-bar {
-    background: var(--white);
-    padding: 12px 0 4px;
-    border-top: 5px solid var(--ink);
-  }
-  #btn-inner {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    padding: 0 16px;
-  }
-  .btn-sep { width: 14px; }
-
+  /* ── Buttons ─────────────────────────────────────────────────────── */
   button {
     font-family: inherit;
     font-weight: 900;
@@ -788,23 +811,24 @@
   button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 
   .btn-nav   { background: var(--white);  color: var(--ink); }
-  .btn-play  { background: var(--red);    color: var(--white); font-size: 17px;
-               padding: 0 26px; min-width: 120px; height: 52px; box-shadow: var(--shadow); }
+  .btn-play  { background: var(--red);    color: var(--white); font-size: 20px;
+               padding: 0 26px; min-width: 128px; height: 60px; box-shadow: var(--shadow); }
   .btn-play.running { background: var(--ink); color: var(--yellow); }
   .btn-reset { background: var(--yellow); color: var(--ink); }
   .btn-plus,
   .btn-minus,
-  .btn-fs    { background: var(--white);  color: var(--ink); padding: 0 12px; font-size: 14px; }
+  .btn-fs    { background: var(--white);  color: var(--ink); padding: 0 12px; font-size: 14px; height: 44px; }
   .btn-plus,
   .btn-minus { font-family: var(--font-num); font-weight: 400; }
 
   #shortcut-hint {
+    display: none;
     text-align: center;
     color: var(--muted);
     font-size: 12px;
     font-weight: 700;
-    padding: 8px 0 8px;
   }
+  @media (min-height: 860px) { body.admin-mode #shortcut-hint { display: block; } }
 
   /* Fullscreen */
   :fullscreen #app       { height: 100vh; }
@@ -878,16 +902,20 @@
   /* ── RWD ────────────────────────────────────────────────────────────── */
   @media (max-width: 900px) {
     html, body { overflow: auto; }
-    #app { grid-template-rows: auto 1fr auto; height: auto; min-height: 100vh; }
-    #title-bar { padding: 8px 14px; height: auto; }
-    #title-img { height: 64px; }
-    #main { grid-template-columns: 1fr; overflow: visible; padding: 14px 16px; gap: 18px; }
-    #right-panel { min-height: 55vh; }
-    #comment-list { max-height: 280px; }
+    #app { height: auto; min-height: 100vh; }
+    #title-bar { grid-template-columns: 1fr auto; padding: 8px 14px; }
+    #title-left { display: none; }
+    #title-bar h1 { justify-content: flex-start; }
+    #title-img { height: 60px; }
+    #title-right { gap: 8px; }
+    #progress-text { display: none; }
+    #main { grid-template-columns: 1fr; overflow: visible; padding: 14px 16px 24px; gap: 22px; }
+    #svg-wrapper { height: min(320px, 78vw); }
+    #right-panel { min-height: 0; }
+    #comment-list { max-height: 360px; }
     button { height: 44px; font-size: 14px; padding: 0 12px; }
-    .btn-play { padding: 0 16px; min-width: 96px; }
-    .btn-sep { width: 4px; }
-    #shortcut-hint { display: none; }
+    .btn-play { padding: 0 16px; min-width: 96px; height: 52px; }
+    body.admin-mode #shortcut-hint { display: none; }
   }
 </style>
 </head>
@@ -896,17 +924,26 @@
 
   <!-- Title Bar -->
   <header id="title-bar">
+    <div id="title-left">
+      <span class="title-series">生活之間：從住民到公民</span>
+      <span class="title-series-sub">系列辯論活動</span>
+    </div>
     <h1>
       <img id="title-img" src="assets/title.webp" alt="自作自受的花蓮人 — 第四場辯論活動">
     </h1>
-    <button id="qr-btn">📱 QR Code</button>
+    <div id="title-right">
+      <span id="progress-text">階段 1 / 14</span>
+      <button id="qr-btn">📱 QR Code</button>
+    </div>
   </header>
 
   <!-- Main -->
   <div id="main">
 
-    <!-- Left: Timer + Stage Info -->
+    <!-- Left: Stage + Timer + Controls -->
     <div id="left-panel">
+      <div id="stage-name">正方立論</div>
+
       <div id="svg-wrapper">
         <svg viewBox="0 0 400 400">
           <polygon id="arc-burst" fill="#FFD400" points="200.0,1.0 228.5,20.2 261.5,10.7 282.6,37.8 317.0,39.0 328.7,71.3 361.0,83.0 362.2,117.4 389.3,138.5 379.8,171.5 399.0,200.0 379.8,228.5 389.3,261.5 362.2,282.6 361.0,317.0 328.7,328.7 317.0,361.0 282.6,362.2 261.5,389.3 228.5,379.8 200.0,399.0 171.5,379.8 138.5,389.3 117.4,362.2 83.0,361.0 71.3,328.7 39.0,317.0 37.8,282.6 10.7,261.5 20.2,228.5 1.0,200.0 20.2,171.5 10.7,138.5 37.8,117.4 39.0,83.0 71.3,71.3 83.0,39.0 117.4,37.8 138.5,10.7 171.5,20.2"/>
@@ -952,34 +989,54 @@
       <div id="side-label">● 正方發言</div>
       <button id="switch-side-btn">切換 → 換反方發言</button>
 
-      <div id="left-bottom">
-        <div id="stage-info">
-          <div class="info-label">目前階段</div>
-          <div id="stage-name">正方立論</div>
-          <div id="progress-text">階段 1 / 14</div>
-          <div style="height:5px"></div>
-          <div class="info-label">下一階段</div>
-          <div id="next-stage-text">▶ 反方立論（3 分鐘）</div>
-        </div>
-
-        <div id="stage-nav">
-          <div class="info-label">快速切換</div>
-          <select id="stage-select"></select>
-        </div>
-
-        <div id="dot-bar">
-          <div id="dots-container"></div>
-        </div>
+      <div id="btn-inner">
+        <button class="btn-nav"   id="btn-prev">上一階段</button>
+        <button class="btn-play"  id="btn-toggle">▶ 開始</button>
+        <button class="btn-reset" id="btn-reset">重置</button>
+        <button class="btn-nav"   id="btn-next">下一階段</button>
+        <div class="btn-sep"></div>
+        <button class="btn-minus" id="btn-m30">-30</button>
+        <button class="btn-plus"  id="btn-p30">+30</button>
       </div>
+
+      <div id="dot-bar">
+        <div id="dots-container"></div>
+      </div>
+
+      <div id="next-stage-row">
+        <span class="info-label">下一階段</span>
+        <span id="next-stage-text">▶ 反方立論（3 分鐘）</span>
+      </div>
+
+      <!-- Admin-only tools (shown after admin login) -->
+      <div id="admin-tools">
+        <select id="stage-select" aria-label="快速切換階段"></select>
+        <button class="btn-minus" id="btn-m60">-60</button>
+        <button class="btn-plus"  id="btn-p60">+60</button>
+        <button class="btn-fs"    id="btn-fs">⛶ 全螢幕</button>
+      </div>
+      <div id="shortcut-hint">快捷鍵：空白鍵＝開始/暫停　←→＝換段　R＝重置　F11＝全螢幕</div>
     </div>
 
-    <!-- Right: Comments only -->
+    <!-- Right: Live votes + Comments -->
     <div id="right-panel">
-      <div id="comment-section">
+      <div id="vote-card" class="panel">
+        <div class="panel-head">
+          <span class="section-title">即時投票</span>
+          <span id="live-vote-total">共 0 票</span>
+        </div>
+        <div id="live-vote-bar">
+          <div id="live-bar-pro"><span id="live-pct-pro">正方 —</span></div>
+          <div id="live-bar-con"><span id="live-pct-con">— 反方</span></div>
+        </div>
+      </div>
+
+      <div id="comment-section" class="panel">
         <div id="comment-header">
           <div class="section-header" style="margin-bottom:0">
             <span class="section-title">即時留言</span>
             <span class="section-badge" id="comment-count"></span>
+            <span class="live-badge">LIVE</span>
           </div>
           <div id="comment-actions">
             <button class="action-btn" id="toggle-vote-btn">停止投票</button>
@@ -1011,24 +1068,6 @@
         <div id="tv-countdown">8:00</div>
       </div>
     </div>
-  </div>
-
-  <!-- Button Bar -->
-  <div id="btn-bar">
-    <div id="btn-inner">
-      <button class="btn-nav"   id="btn-prev">&lt;&lt; 上一階段</button>
-      <button class="btn-play"  id="btn-toggle">▶ 開始</button>
-      <button class="btn-nav"   id="btn-next">下一階段 &gt;&gt;</button>
-      <div class="btn-sep"></div>
-      <button class="btn-reset" id="btn-reset">重置</button>
-      <button class="btn-plus"  id="btn-p30">+30s</button>
-      <button class="btn-plus"  id="btn-p60">+60s</button>
-      <button class="btn-minus" id="btn-m30">−30s</button>
-      <button class="btn-minus" id="btn-m60">−60s</button>
-      <div class="btn-sep"></div>
-      <button class="btn-fs"    id="btn-fs">⛶ 全螢幕</button>
-    </div>
-    <div id="shortcut-hint">快捷鍵：空白鍵＝開始/暫停　　←→＝換段　　R＝重置　　F11＝全螢幕</div>
   </div>
 
 </div>
@@ -1702,6 +1741,11 @@ db.ref("debate/votes").on("value", snap => {
   document.getElementById("con-pct").textContent   = total === 0 ? "—" : cp + "%";
   document.getElementById("vro-bar-pro").style.width = pp + "%";
   document.getElementById("vro-bar-con").style.width = cp + "%";
+
+  document.getElementById("live-vote-total").textContent = `共 ${total} 票`;
+  document.getElementById("live-pct-pro").textContent = total === 0 ? "正方 —" : `正方 ${pp}%`;
+  document.getElementById("live-pct-con").textContent = total === 0 ? "— 反方" : `${cp}% 反方`;
+  document.getElementById("live-bar-pro").style.width = pp + "%";
 });
 
 // ══════════════════════════════════════════════════════════════
@@ -1823,6 +1867,7 @@ function setControlsEnabled(on) {
     const el = document.getElementById(id); if (el) el.disabled = !on;
   });
   stageSelect.disabled = !on;
+  document.body.classList.toggle("admin-mode", on);
   // Dot bar: block pointer events when not admin
   dotsContainer.querySelectorAll(".dot-item").forEach(d => {
     d.style.pointerEvents = on ? "" : "none";
