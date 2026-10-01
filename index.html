@@ -405,9 +405,10 @@
   .action-btn.danger { background: rgba(232,52,42,0.25); color: #FF9999; }
   .action-btn.danger:hover { background: rgba(232,52,42,0.45); }
   a.action-btn { text-decoration: none; }
-  #export-btn, #clear-votes-btn, #toggle-vote-btn, #reset-topic-btn, #reveal-vote-btn, #draw-question-btn, #questions-admin-link { display: none; }
+  #export-btn, #clear-votes-btn, #clear-comments-btn, #toggle-vote-btn, #reset-topic-btn, #reveal-vote-btn, #draw-question-btn, #questions-admin-link { display: none; }
   .admin-active #export-btn,
   .admin-active #clear-votes-btn,
+  .admin-active #clear-comments-btn,
   .admin-active #toggle-vote-btn,
   .admin-active #reveal-vote-btn,
   .admin-active #questions-admin-link { display: inline-flex; }
@@ -997,6 +998,7 @@
           <div id="comment-actions">
             <button class="action-btn" id="toggle-vote-btn">停止投票</button>
             <button class="action-btn danger" id="clear-votes-btn">清除投票</button>
+            <button class="action-btn danger" id="clear-comments-btn">清除留言</button>
             <button class="action-btn" id="reveal-vote-btn">公布結果</button>
             <button class="action-btn" id="draw-question-btn">🎲 抽選提問</button>
             <a class="action-btn" id="questions-admin-link" href="questions.html" target="_blank" rel="noopener">🙋 提問管理</a>
@@ -2000,6 +2002,18 @@ document.getElementById("clear-votes-btn").addEventListener("click", () => {
         db.ref("debate/votes").update(updates);
       }
     });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+// CLEAR COMMENTS (admin only) — soft delete, same as per-comment ✕
+// ══════════════════════════════════════════════════════════════
+document.getElementById("clear-comments-btn").addEventListener("click", () => {
+  if (!commentsCache.length) return;
+  if (confirm(`確定要刪除目前全部 ${commentsCache.length} 則留言嗎？`)) {
+    const updates = {};
+    commentsCache.forEach(c => { updates[`${c.id}/deleted`] = true; });
+    db.ref("debate/comments").update(updates);
   }
 });
 
