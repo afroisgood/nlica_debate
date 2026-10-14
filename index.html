@@ -426,7 +426,37 @@
     padding: 12px 30px;
     max-width: 1100px;
   }
-  #vro-rows { display: flex; flex-direction: column; gap: 16px; width: min(1100px, 92vw); }
+  #vro-body { display: flex; align-items: center; justify-content: center; gap: clamp(24px, 3vw, 48px); width: min(1500px, 94vw); }
+  #vro-rows { display: flex; flex-direction: column; gap: 16px; flex: 1; min-width: 0; max-width: 1100px; }
+
+  /* Speaker winner photo(s): pixelated canvas, revealed coarse → fine */
+  #vro-podium { --podium-size: min(46vh, 26vw); display: flex; gap: 22px; flex-shrink: 0; }
+  #vro-podium:empty { display: none; }
+  #vro-podium[data-count="2"] { --podium-size: min(36vh, 20vw); }
+  #vro-podium[data-count="3"],
+  #vro-podium[data-count="4"] { --podium-size: min(24vh, 12vw); }
+  .podium-card { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .podium-card canvas {
+    display: block;
+    width: var(--podium-size);
+    height: var(--podium-size);
+    background: var(--white);
+    border: 6px solid var(--ink);
+    box-shadow: 10px 10px 0 var(--ink);
+    image-rendering: pixelated;
+    transform: rotate(-2deg);
+  }
+  .podium-name {
+    font-size: clamp(20px, 2.4vw, 34px);
+    font-weight: 900;
+    color: var(--white);
+    background: var(--red);
+    border: 4px solid var(--ink);
+    box-shadow: var(--shadow-sm);
+    padding: 2px 20px;
+    transform: skew(-8deg);
+    white-space: nowrap;
+  }
   .vro-row {
     display: grid;
     grid-template-columns: auto auto 1fr auto;
@@ -776,7 +806,10 @@
 <div id="vote-result-overlay">
   <div id="vro-label">投票結果</div>
   <div id="vro-topic"></div>
-  <div id="vro-rows"></div>
+  <div id="vro-body">
+    <div id="vro-podium"></div>
+    <div id="vro-rows"></div>
+  </div>
   <div id="vro-total">共 0 票</div>
   <button id="vro-close-btn" aria-label="關閉">✕</button>
 </div>
@@ -885,6 +918,13 @@ const OPTION_LETTERS = ["A", "B", "C"];
 const SPEAKER_VOTE_STAGE  = "觀眾投票／休息";
 const SPEAKER_VOTE_PROMPT = "投給最能說服你，或最能代表你對未來花蓮期待的與談人";
 const SPEAKERS = ["楊舒雅", "馬中原", "周欣宜", "尉　楷"];
+// 第一名照片（index.html 專用，順序同 SPEAKERS；512×512 頭肩裁切）
+const SPEAKER_PHOTOS = [
+  "assets/speakers/yang.webp",
+  "assets/speakers/ma.webp",
+  "assets/speakers/zhou.webp",
+  "assets/speakers/wei.webp",
+];
 
 // ══════════════════════════════════════════════════════════════
 // STAGES — 每題 15 分鐘：選邊站・投票 3 / 與談人立場說明 8 / 觀眾發言 2+2
@@ -1324,10 +1364,13 @@ function renderVoteOverlay() {
     total = speakerCounts.reduce((a, b) => a + b, 0);
     document.getElementById("vro-label").textContent = "與談人票選結果";
     document.getElementById("vro-topic").textContent = SPEAKER_VOTE_PROMPT;
-    items = SPEAKERS.map((name, i) => ({ badge: String(i+1), cls: "opt-c", name, n: speakerCounts[i] }))
+    items = SPEAKERS.map((name, i) => ({ cls: "opt-c", name, n: speakerCounts[i], idx: i }))
       .sort((a, b) => b.n - a.n);
+    // Badge = rank (ties share a rank)
+    items.forEach(it => { it.badge = String(1 + items.filter(o => o.n > it.n).length); });
   }
   const max = Math.max(...items.map(it => it.n));
+  renderPodium(q === null && max > 0 ? items.filter(it => it.n === max).map(it => it.idx) : []);
   items.forEach(it => {
     const row = document.createElement("div");
     row.className = "vro-row" + (q === null && max > 0 && it.n === max ? " vro-winner" : "");
@@ -1347,6 +1390,72 @@ function renderVoteOverlay() {
     rowsEl.appendChild(row);
   });
   document.getElementById("vro-total").textContent = `共 ${total} 票`;
+}
+
+// ── Winner photo(s): pixelated, animated from coarse to fine blocks on reveal ──
+const PODIUM_STEPS = [4, 6, 8, 11, 15, 20, 26, 34, 44, 56, 64]; // blocks per side; last = final
+const podiumImages = SPEAKER_PHOTOS.map(src => { const img = new Image(); img.src = src; return img; });
+const pixelBuffer  = document.createElement("canvas");
+let podiumKey   = "";
+let podiumTimer = null;
+
+function renderPodium(winners) {
+  const key = winners.join(",");
+  if (key === podiumKey) return;       // same winner(s): keep canvases as they are
+  podiumKey = key;
+  const el = document.getElementById("vro-podium");
+  el.innerHTML = "";
+  el.dataset.count = winners.length;
+  winners.forEach(i => {
+    const card   = document.createElement("div"); card.className = "podium-card";
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 512;
+    canvas.dataset.speaker = i;
+    canvas.setAttribute("role", "img");
+    canvas.setAttribute("aria-label", `${SPEAKERS[i]} 照片`);
+    const name = document.createElement("div"); name.className = "podium-name";
+    name.textContent = `🏆 ${SPEAKERS[i]}`;
+    card.append(canvas, name);
+    el.appendChild(card);
+  });
+  animatePodium();
+}
+
+function drawPixelated(canvas, img, blocks) {
+  if (!img.complete || !img.naturalWidth) return;
+  pixelBuffer.width = pixelBuffer.height = blocks;
+  const bctx = pixelBuffer.getContext("2d");
+  bctx.imageSmoothingEnabled = true;
+  bctx.drawImage(img, 0, 0, blocks, blocks);            // average colours down to blocks×blocks
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;                    // scale back up as hard-edged squares
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(pixelBuffer, 0, 0, blocks, blocks, 0, 0, canvas.width, canvas.height);
+}
+
+function drawPodium(blocks) {
+  document.querySelectorAll("#vro-podium canvas").forEach(c =>
+    drawPixelated(c, podiumImages[+c.dataset.speaker], blocks));
+}
+
+function animatePodium() {
+  clearInterval(podiumTimer); podiumTimer = null;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const steps  = reduce ? PODIUM_STEPS.slice(-1) : PODIUM_STEPS;
+  const pending = [...document.querySelectorAll("#vro-podium canvas")]
+    .map(c => podiumImages[+c.dataset.speaker])
+    .filter(img => !img.complete);
+  if (pending.length) {                 // wait for photos, then run the animation
+    Promise.all(pending.map(img => img.decode().catch(() => {}))).then(animatePodium);
+    return;
+  }
+  let i = 0;
+  drawPodium(steps[0]);
+  podiumTimer = setInterval(() => {
+    i++;
+    drawPodium(steps[i]);
+    if (i >= steps.length - 1) { clearInterval(podiumTimer); podiumTimer = null; }
+  }, 190);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1508,8 +1617,10 @@ function confirmAdmin() {
 let voteRevealed = false;
 
 db.ref("debate/config/voteRevealed").on("value", snap => {
+  const wasRevealed = voteRevealed;
   voteRevealed = snap.val() === true;
   document.body.classList.toggle("vote-revealed", voteRevealed);
+  if (voteRevealed && !wasRevealed && podiumKey) animatePodium(); // replay the reveal each time
   const btn = document.getElementById("reveal-vote-btn");
   btn.textContent = voteRevealed ? "取消公布" : "公布結果";
   btn.classList.toggle("danger", voteRevealed);
