@@ -47,6 +47,7 @@ debate/
     activeQuestion    Number|null — 0–4 while a question's stages run, else null; vote.html votes only on this question
     votingOpen        Boolean — admin kill-switch for all voting
     voteRevealed      Boolean — controls fullscreen result overlay on index.html
+    display           Object  — { stageIndex, stageTotalTime, isRunning, timeLeft, isOvertime, overtime, at } timer snapshot published by the admin index.html (`publishTimerState()`); non-admin index.html screens mirror it (`applyDisplayState()`). `at` is server ms (local + `.info/serverTimeOffset`); while running, timeLeft/overtime are the run-segment baseline at `at`
   qVotes/
     {questionIndex}/
       {deviceId}/    { nickname, choice: "A"|"B"|"C", updatedAt }
@@ -70,7 +71,7 @@ Legacy paths `votes`, `topicVotes`, `questions`, `config/topicVotingOpen|questio
 
 ### Admin gate (index.html)
 
-All timer/nav controls are `disabled` on load. `setControlsEnabled(bool)` enables/disables: prev/next stage, toggle, reset, ±time buttons, stage-select dropdown, dot bar navigation, and toggles `body.admin-mode`. Password is hardcoded as `ADMIN_PASSWORD` (index.html only). Logging in also syncs the current stage to Firebase so phones follow this screen.
+All timer/nav controls are `disabled` on load. `setControlsEnabled(bool)` enables/disables: prev/next stage, toggle, reset, ±time buttons, stage-select dropdown, dot bar navigation, and toggles `body.admin-mode`. Password is hardcoded as `ADMIN_PASSWORD` (index.html only). Logging in also syncs the current stage and timer to Firebase so phones and other (non-admin) main screens follow this screen. Admin actions (stage change, start/pause, reset, ±time) call `publishTimerState()`.
 
 Keyboard shortcuts (space/arrows/R/F11) are also blocked when not admin.
 

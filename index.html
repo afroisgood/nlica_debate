@@ -1115,6 +1115,7 @@ function toggleTimer() {
     clearInterval(tickInterval); tickInterval = null;
   }
   updateToggleBtn();
+  publishTimerState();
 }
 
 function resetTimer() {
@@ -1122,6 +1123,7 @@ function resetTimer() {
   isRunning = false; overtime = 0; isOvertime = false;
   stageTotalTime = STAGES[stageIndex][1]; timeLeft = stageTotalTime;
   updateDisplay();
+  publishTimerState();
 }
 
 function addTime(seconds) {
@@ -1141,6 +1143,7 @@ function addTime(seconds) {
     lastDisplayedSec = isOvertime ? -overtime : timeLeft;
   }
   updateDisplay();
+  publishTimerState();
 }
 
 function loadStage() {
@@ -1159,7 +1162,62 @@ function loadStage() {
 function syncStageToFirebase() {
   db.ref("debate/config/currentStage").set(STAGES[stageIndex][0]).catch(() => {});
   db.ref("debate/config/activeQuestion").set(stageQuestion()).catch(() => {});
+  publishTimerState();
 }
+
+// ══════════════════════════════════════════════════════════════
+// MULTI-SCREEN SYNC — the admin screen publishes its timer state to
+// debate/config/display; every other (non-admin) main screen mirrors it.
+// Times are in server ms (local + .info/serverTimeOffset) so screens with
+// slightly different clocks still count down together.
+// ══════════════════════════════════════════════════════════════
+let serverOffset = 0;
+db.ref(".info/serverTimeOffset").on("value", snap => { serverOffset = snap.val() || 0; });
+
+function publishTimerState() {
+  if (!isAdminMode) return;
+  db.ref("debate/config/display").set({
+    stageIndex,
+    stageTotalTime,
+    isRunning,
+    // While running, publish the baseline of the current run segment plus when it started
+    timeLeft:   isRunning ? runBaseLeft       : timeLeft,
+    isOvertime: isRunning ? runBaseIsOvertime : isOvertime,
+    overtime:   isRunning ? runBaseOvertime   : overtime,
+    at:         (isRunning ? runStart : Date.now()) + serverOffset,
+  }).catch(() => {});
+}
+
+function applyDisplayState(st) {
+  if (isAdminMode || !st) return; // the admin screen is the source of truth
+  const idx = st.stageIndex;
+  if (!(idx >= 0 && idx < STAGES.length)) return;
+
+  clearInterval(tickInterval); tickInterval = null;
+  const stageChanged = idx !== stageIndex;
+  stageIndex     = idx;
+  stageSelect.value = idx;
+  stageTotalTime = st.stageTotalTime ?? STAGES[idx][1];
+  timeLeft       = st.timeLeft ?? stageTotalTime;
+  isOvertime     = !!st.isOvertime;
+  overtime       = st.overtime || 0;
+  isRunning      = !!st.isRunning;
+
+  if (isRunning) {
+    runStart          = (st.at || Date.now() + serverOffset) - serverOffset; // back to local clock
+    runBaseLeft       = timeLeft;
+    runBaseIsOvertime = isOvertime;
+    runBaseOvertime   = overtime;
+    lastDisplayedSec  = isOvertime ? -overtime : timeLeft;
+    alarmPlayed       = isOvertime;
+    tickInterval = setInterval(tick, 200);
+    tick();
+  }
+  if (stageChanged) { renderVoteCard(); renderVoteOverlay(); }
+  updateDisplay();
+}
+
+db.ref("debate/config/display").on("value", snap => applyDisplayState(snap.val()));
 
 function nextStage() { if (stageIndex < STAGES.length - 1) { stageIndex++; loadStage(); } }
 function prevStage() { if (stageIndex > 0)                 { stageIndex--; loadStage(); } }
@@ -1689,6 +1747,8 @@ window.addEventListener("beforeunload", () => {
   db.ref("debate/likes").off();
   db.ref("debate/config/votingOpen").off();
   db.ref("debate/config/voteRevealed").off();
+  db.ref("debate/config/display").off();
+  db.ref(".info/serverTimeOffset").off();
 });
 
 // ══════════════════════════════════════════════════════════════
