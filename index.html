@@ -22,7 +22,9 @@
     --yellow-lt:    #FFE766;
     --muted:        #555555;
     --pro-tint:     #FFF0EE;
-    --con-tint:     #EEF1FF;
+    --opt-a:        var(--red);
+    --opt-b:        var(--blue);
+    --opt-c:        var(--yellow);
 
     --cream:        var(--ink);    /* timer text / neutral label */
     --coral:        var(--red);    /* 正方 */
@@ -180,69 +182,6 @@
     margin-top: -4px;
   }
 
-  /* ── Free Debate Dual Circles ── */
-  #dual-circles-wrap {
-    display: none;
-    flex-direction: row;
-    gap: 14px;
-    width: min(520px, 92%);
-    height: min(260px, 32vh);
-    flex-shrink: 0;
-    align-items: center;
-  }
-  .dc-side {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    transition: opacity 0.3s;
-  }
-  .dc-side.inactive { opacity: 0.32; }
-  .dc-side svg { width: 100%; height: 100%; max-height: min(200px, 24vh); overflow: visible; }
-  .dc-face     { fill: var(--white); stroke: var(--ink); stroke-width: 4; }
-  .dc-track    { fill: none; stroke: var(--track); }
-  .dc-progress { fill: none; stroke-linecap: butt;
-                 transition: stroke-dashoffset 0.25s linear, stroke 0.4s; }
-  .dc-time {
-    font-size: 38px;
-    fill: var(--ink);
-    dominant-baseline: middle;
-    text-anchor: middle;
-    font-family: var(--font-num);
-    transition: fill 0.3s;
-  }
-  .dc-name {
-    font-size: clamp(13px, 1.6vw, 18px);
-    font-weight: 900;
-    color: var(--white);
-    padding: 2px 14px;
-    border: 3px solid var(--ink);
-    transform: skew(-8deg);
-  }
-  .dc-name-pro { background: var(--red); }
-  .dc-name-con { background: var(--blue); }
-  .dc-status {
-    font-size: clamp(11px, 1.2vw, 13px);
-    font-weight: 700;
-    color: var(--muted);
-  }
-  #dc-pro.speaking .dc-status { color: var(--red-dk); font-weight: 900; }
-  #dc-con.speaking .dc-status { color: var(--blue);   font-weight: 900; }
-
-  #switch-side-btn {
-    display: none;
-    width: min(420px, 100%);
-    height: 48px;
-    background: var(--yellow);
-    color: var(--ink);
-    font-size: 15px;
-    font-weight: 900;
-    flex-shrink: 0;
-  }
-  #switch-side-btn:disabled { background: var(--white); }
-
   /* Stage banner (top of left panel) */
   #stage-name {
     font-size: clamp(22px, 2.6vw, 38px);
@@ -347,34 +286,34 @@
     box-shadow: 8px 8px 0 var(--ink);
   }
 
-  /* Live vote bar */
-  #vote-card { padding: 16px 20px 18px; display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; }
-  .panel-head { display: flex; justify-content: space-between; align-items: center; }
-  #live-vote-total { font-size: 14px; font-weight: 900; }
-  #live-vote-bar {
-    display: flex;
-    height: 52px;
-    border: var(--line);
-    background: var(--blue);
-    overflow: hidden;
-  }
-  #live-bar-pro {
-    width: 50%;
-    background: var(--red);
-    border-right: 4px solid var(--ink);
-    display: flex;
-    align-items: center;
-    transition: width 0.8s cubic-bezier(.4,0,.2,1);
-    min-width: 0;
-  }
-  #live-pct-pro, #live-pct-con {
-    color: var(--white);
+  /* Live vote card (A/B/C of the current question, or speaker-vote status) */
+  #vote-card { padding: 16px 20px 18px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
+  .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  #live-vote-total { font-size: 15px; font-weight: 900; white-space: nowrap; }
+  #vote-card-question {
+    font-size: clamp(15px, 1.4vw, 20px);
     font-weight: 900;
-    font-size: clamp(15px, 1.5vw, 20px);
-    white-space: nowrap;
-    padding: 0 14px;
+    line-height: 1.45;
   }
-  #live-bar-con { flex: 1; display: flex; align-items: center; justify-content: flex-end; min-width: 0; }
+  #vote-card-note { font-size: 14px; font-weight: 700; color: var(--muted); }
+  #vote-card-note:empty { display: none; }
+  #vote-card-rows { display: flex; flex-direction: column; gap: 8px; }
+  .vc-row { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 10px; }
+  .opt-letter {
+    font-family: var(--font-num);
+    width: 34px; height: 34px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 3px solid var(--ink);
+    color: var(--white);
+    font-size: 16px;
+  }
+  .opt-a { background: var(--opt-a); }
+  .opt-b { background: var(--opt-b); }
+  .opt-c { background: var(--opt-c); color: var(--ink); }
+  .vc-label { width: 6.2em; font-size: clamp(14px, 1.3vw, 18px); font-weight: 900; white-space: nowrap; }
+  .vc-bar { height: 26px; border: 3px solid var(--ink); background: var(--white); overflow: hidden; }
+  .vc-fill { height: 100%; width: 0%; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+  .vc-num { font-size: 14px; font-weight: 900; white-space: nowrap; min-width: 6.5em; text-align: right; }
   .live-badge {
     font-family: var(--font-num);
     font-size: 13px;
@@ -446,35 +385,30 @@
   .action-btn.danger { background: var(--pro-tint); color: var(--red-dk); }
   .action-btn.danger:hover { background: #FFD9D4; }
   a.action-btn { text-decoration: none; }
-  #export-btn, #clear-votes-btn, #clear-comments-btn, #toggle-vote-btn, #reset-topic-btn, #reveal-vote-btn, #draw-question-btn, #questions-admin-link { display: none; }
+  #export-btn, #clear-votes-btn, #clear-comments-btn, #toggle-vote-btn, #reveal-vote-btn { display: none; }
   .admin-active #export-btn,
   .admin-active #clear-votes-btn,
   .admin-active #clear-comments-btn,
   .admin-active #toggle-vote-btn,
-  .admin-active #reveal-vote-btn,
-  .admin-active #questions-admin-link { display: inline-flex; }
-  .admin-active.qna-active #draw-question-btn { display: inline-flex; background: var(--yellow); }
-  /* Reset topic btn lives in topic-vote-display, toggled via JS */
-  #reset-topic-btn { height: 40px; padding: 0 12px; font-size: 13px; }
+  .admin-active #reveal-vote-btn { display: inline-flex; }
 
-  /* ── Fullscreen overlays (vote result / drawn question) ── */
-  #vote-result-overlay,
-  #question-overlay {
+  /* ── Fullscreen vote-result overlay ── */
+  #vote-result-overlay {
     display: none;
     position: fixed;
     inset: 0;
+    z-index: 100;
     background-color: var(--yellow);
     background-image: repeating-conic-gradient(from 0deg at 50% 50%, var(--yellow) 0deg 8deg, var(--yellow-lt) 8deg 16deg);
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 22px;
+    padding: 40px;
   }
-  #vote-result-overlay { z-index: 100; gap: 20px; }
-  #question-overlay    { z-index: 101; gap: 24px; }
   body.vote-revealed #vote-result-overlay { display: flex; }
-  body.question-revealed #question-overlay { display: flex; }
 
-  #vro-label, #qo-label {
+  #vro-label {
     font-size: clamp(16px, 2vw, 26px);
     font-weight: 900;
     color: var(--yellow);
@@ -484,82 +418,40 @@
     transform: rotate(-3deg);
   }
   #vro-topic {
-    font-size: clamp(18px, 2.6vw, 34px);
+    font-size: clamp(20px, 2.6vw, 36px);
     font-weight: 900;
     color: var(--ink);
     background: var(--white);
     border: var(--line);
     box-shadow: var(--shadow);
     text-align: center;
-    padding: 10px 28px;
-    margin: 0 40px;
+    padding: 12px 30px;
     max-width: 1100px;
   }
-  #vro-counts {
-    display: flex;
-    align-items: stretch;
-    gap: clamp(28px, 6vw, 90px);
-  }
-  .vro-side {
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  #vro-rows { display: flex; flex-direction: column; gap: 16px; width: min(1100px, 92vw); }
+  .vro-row {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    align-items: center;
+    gap: 18px;
     background: var(--white);
     border: 5px solid var(--ink);
-    box-shadow: 10px 10px 0 var(--ink);
-    padding: 14px clamp(24px, 4vw, 56px);
-    min-width: clamp(180px, 22vw, 320px);
+    box-shadow: 8px 8px 0 var(--ink);
+    padding: 12px 22px;
   }
-  .vro-side.pro { transform: rotate(-2deg); }
-  .vro-side.con { transform: rotate(2deg); }
-  .vro-side-name {
-    font-size: clamp(18px, 2.4vw, 30px);
-    font-weight: 900;
-    color: var(--white);
-    padding: 2px 20px;
-    border: 3px solid var(--ink);
-    transform: skew(-8deg);
-  }
-  .vro-side.pro .vro-side-name { background: var(--red); }
-  .vro-side.con .vro-side-name { background: var(--blue); }
-  .vro-num {
-    font-size: clamp(64px, 11vw, 140px);
-    font-family: var(--font-num);
-    line-height: 1.05;
-  }
-  .vro-side.pro .vro-num { color: var(--red); }
-  .vro-side.con .vro-num { color: var(--blue); }
-  .vro-pct {
-    font-family: var(--font-num);
-    font-size: clamp(18px, 2.6vw, 30px);
-    color: var(--ink);
-  }
-  #vro-bar-wrap {
-    width: min(640px, 80vw);
-    height: 36px;
-    border: var(--line);
-    box-shadow: var(--shadow-sm);
-    background: var(--white);
-    display: flex;
-    overflow: hidden;
-  }
-  #vro-bar-pro {
-    background: var(--red);
-    height: 100%;
-    transition: width 1.2s cubic-bezier(.4,0,.2,1);
-    width: 50%;
-  }
-  #vro-bar-con {
-    background: var(--blue);
-    height: 100%;
-    flex: 1;
-    border-left: 4px solid var(--ink);
-    transition: width 1.2s cubic-bezier(.4,0,.2,1);
-  }
+  .vro-row.vro-winner { background: var(--yellow-lt); transform: scale(1.03); }
+  .vro-row .opt-letter { width: 54px; height: 54px; font-size: 26px; }
+  .vro-name { width: 6.6em; font-size: clamp(22px, 2.6vw, 38px); font-weight: 900; white-space: nowrap; }
+  .vro-bar { height: 40px; border: 4px solid var(--ink); background: var(--white); overflow: hidden; }
+  .vro-fill { height: 100%; width: 0%; transition: width 1.2s cubic-bezier(.4,0,.2,1); }
+  .vro-num { font-family: var(--font-num); font-size: clamp(26px, 3.2vw, 46px); white-space: nowrap; min-width: 4.2em; text-align: right; }
+  .vro-num small { font-family: var(--font); font-weight: 900; font-size: 0.5em; margin-left: 4px; }
   #vro-total {
-    font-size: clamp(14px, 1.6vw, 20px);
+    font-size: clamp(15px, 1.6vw, 20px);
     color: var(--ink);
     font-weight: 900;
   }
-  #vro-close-btn, #qo-close-btn {
+  #vro-close-btn {
     position: absolute;
     top: 20px;
     right: 24px;
@@ -574,33 +466,6 @@
     align-items: center;
     justify-content: center;
   }
-
-  #qo-side {
-    font-size: clamp(20px, 2.6vw, 32px);
-    font-weight: 900;
-    padding: 4px 30px;
-    color: var(--white);
-    border: 4px solid var(--ink);
-    box-shadow: var(--shadow-sm);
-    transform: skew(-8deg);
-  }
-  #qo-side.pro { background: var(--red); }
-  #qo-side.con { background: var(--blue); }
-  #qo-text {
-    font-size: clamp(24px, 3.6vw, 48px);
-    font-weight: 900;
-    color: var(--ink);
-    background: var(--white);
-    border: 5px solid var(--ink);
-    box-shadow: 10px 10px 0 var(--ink);
-    border-radius: 28px;
-    text-align: center;
-    padding: 28px 48px;
-    margin: 0 40px;
-    line-height: 1.4;
-    max-width: 1000px;
-  }
-  .qo-spinning #qo-close-btn { display: none; }
 
   #comment-list {
     flex: 1;
@@ -621,8 +486,6 @@
   }
   @keyframes popIn { from { opacity: 0; transform: scale(0.96) translateY(6px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { .comment-item { animation: none; } }
-  .comment-item.pro { background: var(--pro-tint); box-shadow: inset 6px 0 0 var(--red); }
-  .comment-item.con { background: var(--con-tint); box-shadow: inset 6px 0 0 var(--blue); }
 
   .comment-meta {
     display: flex;
@@ -631,8 +494,6 @@
     margin-bottom: 4px;
   }
   .comment-nick { font-size: 14px; font-weight: 900; color: var(--ink); }
-  .comment-item.pro .comment-nick { color: var(--red-dk); }
-  .comment-item.con .comment-nick { color: var(--blue); }
   .comment-right { display: flex; align-items: center; gap: 6px; }
   .comment-time { font-size: 12px; font-weight: 700; color: var(--muted); }
   .comment-del {
@@ -668,135 +529,6 @@
     font-weight: 700;
     padding: 40px 0;
     pointer-events: none;
-  }
-
-  /* ── Topic Vote Display (index.html full-width) ── */
-  #topic-vote-display {
-    position: relative;
-    display: none;
-    flex-direction: column;
-    background: var(--white);
-    border: var(--line);
-    box-shadow: 8px 8px 0 var(--ink);
-    padding: 20px 36px 24px;
-    overflow-y: auto;
-    gap: 0;
-  }
-  #main.topic-mode { grid-template-columns: 1fr; }
-  #main.topic-mode #left-panel,
-  #main.topic-mode #right-panel { display: none; }
-  #main.topic-mode #topic-vote-display { display: flex; }
-
-  #tv-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding-bottom: 14px;
-    border-bottom: 4px solid var(--ink);
-    margin-bottom: 4px;
-  }
-  #tv-title {
-    font-size: clamp(18px, 2.4vw, 30px);
-    font-weight: 900;
-    color: var(--white);
-    background: var(--red);
-    border: 4px solid var(--ink);
-    padding: 2px 18px;
-    transform: skew(-8deg);
-  }
-  #tv-total {
-    font-size: clamp(13px, 1.4vw, 17px);
-    font-weight: 900;
-    color: var(--ink);
-    margin-left: auto;
-  }
-  #tv-countdown-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    margin-top: 20px;
-    padding-top: 18px;
-    border-top: 4px solid var(--ink);
-  }
-  #tv-countdown-label {
-    font-size: 13px;
-    font-weight: 900;
-    color: var(--white);
-    background: var(--ink);
-    padding: 1px 10px;
-    letter-spacing: 0.12em;
-  }
-  #tv-countdown {
-    font-size: clamp(46px, 7vw, 90px);
-    color: var(--ink);
-    font-family: var(--font-num);
-    line-height: 1;
-  }
-  #tv-countdown.warn  { color: var(--warn);  }
-  #tv-countdown.alert { color: var(--alert); }
-  #tv-countdown.done  {
-    color: var(--muted);
-    font-family: var(--font);
-    font-weight: 900;
-    font-size: clamp(22px, 3vw, 40px);
-  }
-  .tv-opt {
-    padding: 14px 0;
-    border-bottom: 2px dashed var(--ink);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .tv-opt:last-child { border-bottom: none; }
-  .tv-opt-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  .tv-opt-num {
-    font-family: var(--font-num);
-    font-size: clamp(14px, 1.4vw, 18px);
-    color: var(--ink);
-    min-width: 28px;
-    flex-shrink: 0;
-  }
-  .tv-opt-text {
-    font-size: clamp(15px, 1.6vw, 20px);
-    font-weight: 900;
-    color: var(--ink);
-    flex: 1;
-    line-height: 1.4;
-  }
-  .tv-bar-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding-left: 38px;
-  }
-  .tv-bar-bg {
-    flex: 1;
-    height: 26px;
-    background: var(--white);
-    border: 3px solid var(--ink);
-    overflow: hidden;
-  }
-  .tv-bar-fill {
-    height: 100%;
-    background: var(--gray-blue);
-    transition: width 0.8s cubic-bezier(.4,0,.2,1);
-    width: 0%;
-  }
-  .tv-opt.tv-leading .tv-bar-fill { background: var(--red); }
-  .tv-opt.tv-leading .tv-opt-text { color: var(--red-dk); }
-  .tv-votes-text {
-    font-size: clamp(13px, 1.3vw, 16px);
-    font-weight: 900;
-    color: var(--ink);
-    min-width: 80px;
-    text-align: right;
-    flex-shrink: 0;
   }
 
   /* ── Buttons ─────────────────────────────────────────────────────── */
@@ -976,37 +708,7 @@
           <text id="time-caption"  x="200" y="252">剩餘時間</text>
         </svg>
       </div>
-      <!-- Dual circles for 自由辯論 (hidden by default) -->
-      <div id="dual-circles-wrap">
-        <div class="dc-side" id="dc-pro">
-          <svg viewBox="0 0 200 200">
-            <circle class="dc-face"     cx="100" cy="100" r="72"/>
-            <circle class="dc-track"    cx="100" cy="100" r="80" stroke-width="16"/>
-            <circle class="dc-progress" cx="100" cy="100" r="80" stroke-width="16"
-                    stroke-dasharray="502.7" stroke-dashoffset="0"
-                    transform="rotate(-90 100 100)" id="dc-pro-arc"/>
-            <circle cx="100" cy="100" r="90" fill="none" stroke="#111111" stroke-width="4"/>
-            <text class="dc-time" id="dc-pro-time" x="100" y="106">3:00</text>
-          </svg>
-          <div class="dc-name dc-name-pro">正方</div>
-          <div class="dc-status" id="dc-pro-status">待機</div>
-        </div>
-        <div class="dc-side" id="dc-con">
-          <svg viewBox="0 0 200 200">
-            <circle class="dc-face"     cx="100" cy="100" r="72"/>
-            <circle class="dc-track"    cx="100" cy="100" r="80" stroke-width="16"/>
-            <circle class="dc-progress" cx="100" cy="100" r="80" stroke-width="16"
-                    stroke-dasharray="502.7" stroke-dashoffset="0"
-                    transform="rotate(-90 100 100)" id="dc-con-arc"/>
-            <circle cx="100" cy="100" r="90" fill="none" stroke="#111111" stroke-width="4"/>
-            <text class="dc-time" id="dc-con-time" x="100" y="106">3:00</text>
-          </svg>
-          <div class="dc-name dc-name-con">反方</div>
-          <div class="dc-status" id="dc-con-status">待機</div>
-        </div>
-      </div>
       <div id="side-label">● 正方發言</div>
-      <button id="switch-side-btn">切換 → 換反方發言</button>
 
       <div id="btn-inner">
         <button class="btn-nav"   id="btn-prev">上一階段</button>
@@ -1041,13 +743,12 @@
     <div id="right-panel">
       <div id="vote-card" class="panel">
         <div class="panel-head">
-          <span class="section-title">即時投票</span>
+          <span class="section-title" id="vote-card-title">即時投票</span>
           <span id="live-vote-total">共 0 票</span>
         </div>
-        <div id="live-vote-bar">
-          <div id="live-bar-pro"><span id="live-pct-pro">正方 —</span></div>
-          <div id="live-bar-con"><span id="live-pct-con">— 反方</span></div>
-        </div>
+        <div id="vote-card-question"></div>
+        <div id="vote-card-rows"></div>
+        <div id="vote-card-note"></div>
       </div>
 
       <div id="comment-section" class="panel">
@@ -1062,8 +763,6 @@
             <button class="action-btn danger" id="clear-votes-btn">清除投票</button>
             <button class="action-btn danger" id="clear-comments-btn">清除留言</button>
             <button class="action-btn" id="reveal-vote-btn">公布結果</button>
-            <button class="action-btn" id="draw-question-btn">🎲 抽選提問</button>
-            <a class="action-btn" id="questions-admin-link" href="questions.html" target="_blank" rel="noopener">🙋 提問管理</a>
             <button class="action-btn" id="export-btn">匯出資料</button>
             <button class="action-btn" id="admin-btn">管理員</button>
           </div>
@@ -1074,19 +773,6 @@
       </div>
     </div>
 
-    <!-- Topic Vote Display (下期題目票選 stage) — full width -->
-    <div id="topic-vote-display">
-      <div id="tv-header">
-        <span id="tv-title">📊 下期題目票選</span>
-        <span id="tv-total">共 0 票</span>
-        <button class="action-btn danger" id="reset-topic-btn">重置票選</button>
-      </div>
-      <div id="tv-options-list"></div>
-      <div id="tv-countdown-wrap">
-        <span id="tv-countdown-label">剩餘時間</span>
-        <div id="tv-countdown">8:00</div>
-      </div>
-    </div>
   </div>
 
 </div>
@@ -1094,33 +780,10 @@
 <!-- Vote Result Overlay -->
 <div id="vote-result-overlay">
   <div id="vro-label">投票結果</div>
-  <div id="vro-topic">政府經費應該優先支持「改善在地生活支持系統」而非「打造產業專業環境」</div>
-  <div id="vro-counts">
-    <div class="vro-side pro">
-      <div class="vro-side-name">正方</div>
-      <div class="vro-num" id="pro-count">0</div>
-      <div class="vro-pct" id="pro-pct">—</div>
-    </div>
-    <div class="vro-side con">
-      <div class="vro-pct" id="con-pct">—</div>
-      <div class="vro-num" id="con-count">0</div>
-      <div class="vro-side-name">反方</div>
-    </div>
-  </div>
-  <div id="vro-bar-wrap">
-    <div id="vro-bar-pro"></div>
-    <div id="vro-bar-con"></div>
-  </div>
+  <div id="vro-topic"></div>
+  <div id="vro-rows"></div>
   <div id="vro-total">共 0 票</div>
-  <button id="vro-close-btn">✕</button>
-</div>
-
-<!-- Question Draw Overlay -->
-<div id="question-overlay">
-  <div id="qo-label">觀眾提問</div>
-  <div id="qo-side">正方</div>
-  <div id="qo-text">提問內容</div>
-  <button id="qo-close-btn">✕</button>
+  <button id="vro-close-btn" aria-label="關閉">✕</button>
 </div>
 
 <!-- Admin Modal -->
@@ -1191,36 +854,60 @@ const db = firebase.database();
 const ADMIN_PASSWORD = "debate2026";
 
 // ══════════════════════════════════════════════════════════════
-// STAGES
+// 辯論題目（index.html 與 vote.html 各有一份，修改時兩邊要同步）
+//   short：大螢幕用短標籤；text：手機顯示完整選項
 // ══════════════════════════════════════════════════════════════
-const STAGES = [
-  ["正方一辯立論",           240],
-  ["反方一辯立論",           240],
-  ["正方二辯立論",           180],
-  ["反方二辯立論",           180],
-  ["正方二辯質詢反方一辯",   180],
-  ["反方二辯質詢正方一辯",   180],
-  ["正方三辯質詢反方二辯",   180],
-  ["反方三辯質詢正方二辯",   180],
-  ["觀眾提問正方",           180],
-  ["正方回應",               180],
-  ["觀眾提問反方",           180],
-  ["反方回應",               180],
-  ["正方三辯結辯",           180],
-  ["反方三辯結辯",           180],
-  ["觀眾投票",               600],
-  ["開放式討論",             900],
-  ["活動結束",                 0],
+const QUESTIONS = [
+  { title: "花蓮的低薪結構，是可以接受的地方現實嗎？", options: [
+    { short: "接受",         text: "接受，地方條件不同，薪資本來就會不同" },
+    { short: "不接受",       text: "不接受，不能用「花蓮行情」合理化低薪" },
+    { short: "理解但不認命", text: "可以理解，但不能把它當成永遠不會改變的現實" },
+  ]},
+  { title: "你會推薦朋友晚上去東大門夜市嗎？", options: [
+    { short: "會推薦",       text: "會，花蓮最推薦的晚上景點" },
+    { short: "不推薦",       text: "不會，不好逛且不好吃" },
+    { short: "不然去哪？",   text: "要不然花蓮晚上還可以去哪？" },
+  ]},
+  { title: "選舉年，當你跟家人的政治立場相反時怎麼做？", options: [
+    { short: "照樣討論",     text: "同桌吃飯相遇得到，和平討論或是大吵一架" },
+    { short: "避而不談",     text: "有理講不通，政治不上桌，避而不談" },
+    { short: "一家親",       text: "立場相同一家親" },
+  ]},
+  { title: "榮獲百大伴手禮的花蓮麻糬是個令人驕傲的伴手禮嗎？", options: [
+    { short: "是",           text: "是，花蓮麻糬送禮自用兩相宜" },
+    { short: "不是",         text: "不是，真的不會推薦別人買" },
+    { short: "好吃但沒然後", text: "麻糬好吃，但是就沒有然後了" },
+  ]},
+  { title: "很多人說花蓮的物價跟台北一樣，但不論如何，你覺得花蓮的物價是合理的嗎？", options: [
+    { short: "合理",         text: "合理，考量花東較高的物流運輸成本與基本工資調升，售價調高符合商業邏輯。" },
+    { short: "不合理",       text: "不合理，即使考慮運費與成本，花蓮物價仍高於許多西南部縣市，消費感受並不合理。" },
+    { short: "沒意見",       text: "沒有意見，物價高低應由市場機制自行調節，我們應該相信價格會由「看不見的手」決定。" },
+  ]},
 ];
+const OPTION_LETTERS = ["A", "B", "C"];
 
-const TOPICS = [
-  "花蓮要吸引更多移居者，還是先照顧現有居民？",
-  "花蓮的問題在於資源不足，還是連結不足？",
-  "花蓮適合長期生活，還是適合短期停留？",
-  "花蓮交通應該優先改善對外連結，還是先提升在地交通便利？",
-  "花蓮產業應該開放大型企業進駐，還是維持地方小型經濟體？",
-  "花蓮應該維持慢生活文化，還是追求更現代化的地方發展？",
-];
+// 與談人票選（觀眾投票／休息 階段）
+const SPEAKER_VOTE_STAGE  = "觀眾投票／休息";
+const SPEAKER_VOTE_PROMPT = "投給最能說服你，或最能代表你對未來花蓮期待的與談人";
+const SPEAKERS = ["楊舒雅", "馬中原", "周欣宜", "尉　楷"];
+
+// ══════════════════════════════════════════════════════════════
+// STAGES — 每題 15 分鐘：選邊站・投票 3 / 與談人立場說明 8 / 觀眾發言 2+2
+// ══════════════════════════════════════════════════════════════
+const STAGES = [];   // [name, seconds, questionIndex?]
+QUESTIONS.forEach((q, i) => {
+  const n = i + 1;
+  STAGES.push([`第${n}題｜選邊站・投票`,      180, i]);
+  STAGES.push([`第${n}題｜與談人立場說明`,    480, i]);
+  STAGES.push([`第${n}題｜觀眾發言 1`,        120, i]);
+  STAGES.push([`第${n}題｜觀眾發言 2`,        120, i]);
+});
+STAGES.push(
+  [SPEAKER_VOTE_STAGE, 600],
+  ["頒獎時間",         300],
+  ["與談人分享",       900],
+  ["活動結束",           0],
+);
 
 const CIRCUMFERENCE = 2 * Math.PI * 168;
 
@@ -1251,14 +938,6 @@ let runBaseIsOvertime = false;
 let runBaseOvertime   = 0;
 let lastDisplayedSec  = -1;
 let alarmPlayed       = false;
-
-// ── Free Debate state ─────────────────────────────────────────
-let fdProTime      = 180;
-let fdConTime      = 180;
-let fdActiveSide   = null;   // "pro" | "con" | null
-let fdRunBase      = 180;    // baseline time of active side when run started
-let fdAlarmPlayed  = false;
-let fdLastSec      = -1;
 
 // ── DOM refs ──────────────────────────────────────────────────
 const arcProgress   = document.getElementById("arc-progress");
@@ -1313,27 +992,18 @@ function playAlarm() {
 // ══════════════════════════════════════════════════════════════
 // HELPERS
 // ══════════════════════════════════════════════════════════════
-function stageRingColor(idx) {
-  const name = STAGES[idx ?? stageIndex][0];
-  if (name === "自由辯論")       return fdActiveSide === "con" ? C.orange : C.coral;
-  if (name.includes("討論"))     return C.grayBlue;
-  if (name.includes("反方"))     return C.orange;
-  if (name.includes("觀眾投票")) return C.sky;
-  return C.coral;
+function stageQuestion(idx) {
+  const q = STAGES[idx ?? stageIndex][2];
+  return typeof q === "number" ? q : null;
 }
 function stageSideLabel(idx) {
   idx = idx ?? stageIndex;
   if (idx >= STAGES.length - 1) return { text: "活動結束", color: C.cream };
   const name = STAGES[idx][0];
-  if (name === "自由辯論") {
-    if (fdActiveSide === "con") return { text: "● 反方發言", color: C.orange };
-    if (fdActiveSide === "pro") return { text: "● 正方發言", color: C.coral  };
-    return { text: "● 自由辯論", color: C.cream };
-  }
-  if (name.includes("討論"))     return { text: "● 討論時間",  color: C.grayBlue };
-  if (name.includes("反方"))     return { text: "● 反方發言",  color: C.orange };
-  if (name.includes("正方"))     return { text: "● 正方發言",  color: C.coral  };
-  if (name.includes("觀眾投票")) return { text: "● 觀眾投票中", color: C.sky   };
+  if (name.includes("選邊站"))       return { text: "● 觀眾投票中",       color: C.sky   };
+  if (name.includes("與談人"))       return { text: "● 與談人發言",       color: C.coral };
+  if (name.includes("觀眾發言"))     return { text: "● 觀眾發言",         color: C.orange };
+  if (name === SPEAKER_VOTE_STAGE)   return { text: "● 與談人票選・休息", color: C.sky   };
   return { text: "", color: C.cream };
 }
 function fmt(s) {
@@ -1349,190 +1019,43 @@ function fmtTs(ts) {
   return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
 }
 
-function isFreeDebate() {
-  return STAGES[stageIndex][0] === "自由辯論";
-}
-
-function isTopicVote() {
-  return STAGES[stageIndex][0] === "下期題目票選";
-}
-
-// ── Build topic options list (called once) ────────────────────
-let tvBuilt = false;
-function buildTopicDisplay() {
-  if (tvBuilt) return; tvBuilt = true;
-  const list = document.getElementById("tv-options-list");
-  TOPICS.forEach((topic, i) => {
-    const opt = document.createElement("div");
-    opt.className = "tv-opt"; opt.id = `tv-opt-${i}`;
-    opt.innerHTML = `
-      <div class="tv-opt-row">
-        <span class="tv-opt-num">${i + 1}.</span>
-        <span class="tv-opt-text">${topic}</span>
-      </div>
-      <div class="tv-bar-row">
-        <div class="tv-bar-bg"><div class="tv-bar-fill" id="tv-bar-${i}"></div></div>
-        <span class="tv-votes-text" id="tv-votes-${i}">0 票</span>
-      </div>`;
-    list.appendChild(opt);
-  });
-}
-
-function showTopicDisplay() {
-  buildTopicDisplay();
-  document.getElementById("main").classList.add("topic-mode");
-}
-function hideTopicDisplay() {
-  document.getElementById("main").classList.remove("topic-mode");
-}
-
-// ── Render topic vote counts ──────────────────────────────────
-let tvCounts = [0,0,0,0,0,0];
-
-function renderTopicVotes() {
-  const total  = tvCounts.reduce((a, b) => a + b, 0);
-  const maxVal = Math.max(...tvCounts, 1);
-  document.getElementById("tv-total").textContent = `共 ${total} 票`;
-  tvCounts.forEach((count, i) => {
-    const bar   = document.getElementById(`tv-bar-${i}`);
-    const votes = document.getElementById(`tv-votes-${i}`);
-    const opt   = document.getElementById(`tv-opt-${i}`);
-    if (!bar) return;
-    const pct = total > 0 ? Math.round(count / total * 100) : 0;
-    bar.style.width = pct + "%";
-    votes.textContent = total > 0 ? `${count} 票 (${pct}%)` : "0 票";
-    opt.classList.toggle("tv-leading", count > 0 && count === maxVal);
-  });
-}
-
-const DC_CIRC = 2 * Math.PI * 80; // ≈ 502.655
-
-function showDualTimer() {
-  document.getElementById("svg-wrapper").style.display       = "none";
-  document.getElementById("side-label").style.display        = "none";
-  document.getElementById("dual-circles-wrap").style.display = "flex";
-  document.getElementById("switch-side-btn").style.display   = "block";
-  updateDualTimerDisplay();
-}
-
-function hideDualTimer() {
-  document.getElementById("svg-wrapper").style.display       = "";
-  document.getElementById("side-label").style.display        = "";
-  document.getElementById("dual-circles-wrap").style.display = "none";
-  document.getElementById("switch-side-btn").style.display   = "none";
-}
-
-function updateDualTimerDisplay() {
-  const total     = STAGES[stageIndex][1];
-  const switchBtn = document.getElementById("switch-side-btn");
-
-  function renderCircle(arc, timeEl, card, statusEl, t, isActive, color) {
-    const isEmpty = t === 0 && fdActiveSide !== null;
-    const isLow   = t <= 30 && t > 0;
-    timeEl.textContent            = fmt(t);
-    arc.style.strokeDashoffset    = DC_CIRC * (1 - (total > 0 ? t / total : 0));
-    arc.style.stroke              = isEmpty ? C.alert : isLow ? C.warn : color;
-    timeEl.style.fill             = isEmpty ? C.alert : isLow ? C.warn : C.cream;
-    card.className = "dc-side"
-      + (isActive && isRunning ? " speaking" : "")
-      + (!isActive && fdActiveSide !== null && t > 0 ? " inactive" : "");
-    statusEl.textContent = t === 0 && fdActiveSide !== null ? "時間結束"
-      : (isActive && isRunning ? "▶ 發言中" : "⏸ 待機");
-  }
-
-  renderCircle(
-    document.getElementById("dc-pro-arc"),
-    document.getElementById("dc-pro-time"),
-    document.getElementById("dc-pro"),
-    document.getElementById("dc-pro-status"),
-    fdProTime, fdActiveSide === "pro", C.coral
-  );
-  renderCircle(
-    document.getElementById("dc-con-arc"),
-    document.getElementById("dc-con-time"),
-    document.getElementById("dc-con"),
-    document.getElementById("dc-con-status"),
-    fdConTime, fdActiveSide === "con", C.orange
-  );
-
-  // Switch button
-  if (fdProTime === 0 && fdConTime === 0) {
-    switchBtn.textContent = "自由辯論結束";
-    switchBtn.disabled = true;
-  } else if (fdActiveSide === "con") {
-    switchBtn.textContent = "切換 → 換正方發言";
-    switchBtn.disabled = fdProTime === 0;
-  } else {
-    switchBtn.textContent = "切換 → 換反方發言";
-    switchBtn.disabled = fdConTime === 0;
-  }
-}
-
 // ══════════════════════════════════════════════════════════════
 // TIMER DISPLAY
 // ══════════════════════════════════════════════════════════════
 function updateDisplay() {
   const total = STAGES.length - 1, idx = stageIndex;
+  const q = stageQuestion();
   stageName.textContent    = STAGES[idx][0];
-  progressText.textContent = idx < total ? `階段 ${idx+1} / ${total}` : "活動已結束";
+  progressText.textContent = idx >= total ? "活動已結束"
+    : q !== null ? `第 ${q+1} / ${QUESTIONS.length} 題` : `階段 ${idx+1} / ${total}`;
 
-  if (!isFreeDebate()) {
-    const sl = stageSideLabel();
-    sideLabel.textContent = sl.text; sideLabel.style.color = sl.color;
-  }
+  const sl = stageSideLabel();
+  sideLabel.textContent = sl.text; sideLabel.style.color = sl.color;
 
   const ni = idx + 1;
   if (ni < STAGES.length) {
     const nn = STAGES[ni][0], nt = STAGES[ni][1];
-    nextStageText.textContent = nn === "自由辯論" ? `▶ ${nn}（各 3 分鐘）`
-      : nt === 0 ? `▶ ${nn}` : `▶ ${nn}（${fmtStageTime(nt)}）`;
+    nextStageText.textContent = nt === 0 ? `▶ ${nn}` : `▶ ${nn}（${fmtStageTime(nt)}）`;
   } else {
     nextStageText.textContent = "—";
   }
 
   updateDots(); updateToggleBtn();
 
-  // Update topic vote countdown display
-  if (isTopicVote()) {
-    const cdEl = document.getElementById("tv-countdown");
-    if (cdEl) {
-      if (timeLeft === 0) {
-        cdEl.textContent = "投票結束";
-        cdEl.className = "done";
-      } else {
-        cdEl.textContent = fmt(timeLeft);
-        cdEl.className = timeLeft <= 30 ? "alert" : timeLeft <= 60 ? "warn" : "";
-      }
-    }
-  }
-
-  if (!isFreeDebate() && !isTopicVote()) {
-    if (isOvertime) {
-      timeText.textContent               = `+${fmt(overtime)}`;
-      timeText.style.fill                = C.alert;
-      arcProgress.style.stroke           = C.alert;
-      arcProgress.style.strokeDashoffset = CIRCUMFERENCE;
-      overtimeHint.classList.add("visible");
-    } else {
-      timeText.textContent = fmt(timeLeft);
-      overtimeHint.classList.remove("visible");
-      arcProgress.style.strokeDashoffset = CIRCUMFERENCE * (1 - (stageTotalTime > 0 ? timeLeft/stageTotalTime : 0));
-      const arcColor  = timeLeft === 0 ? C.alert : timeLeft <= 30 ? C.warn : stageRingColor();
-      const textColor = timeLeft === 0 ? C.alert : timeLeft <= 30 ? C.warn : C.cream;
-      arcProgress.style.stroke = arcColor;
-      timeText.style.fill      = textColor;
-    }
+  if (isOvertime) {
+    timeText.textContent               = `+${fmt(overtime)}`;
+    timeText.style.fill                = C.alert;
+    arcProgress.style.strokeDashoffset = CIRCUMFERENCE;
+    overtimeHint.classList.add("visible");
+  } else {
+    timeText.textContent = fmt(timeLeft);
+    overtimeHint.classList.remove("visible");
+    arcProgress.style.strokeDashoffset = CIRCUMFERENCE * (1 - (stageTotalTime > 0 ? timeLeft/stageTotalTime : 0));
+    timeText.style.fill = timeLeft === 0 ? C.alert : timeLeft <= 30 ? C.warn : C.cream;
   }
 }
 
 function updateToggleBtn() {
-  if (isFreeDebate()) {
-    const done = fdProTime === 0 && fdConTime === 0;
-    btnToggle.textContent = done ? "自由辯論結束" : isRunning ? "⏸ 暫停" : "▶ 開始";
-    btnToggle.disabled    = !isAdminMode || done;
-    btnToggle.classList.toggle("running", isRunning && !done);
-    return;
-  }
   const isEnd = STAGES[stageIndex][1] === 0;
   btnToggle.textContent = isEnd ? "活動結束" : isRunning ? "⏸ 暫停" : "▶ 開始";
   btnToggle.disabled    = !isAdminMode || isEnd;
@@ -1562,22 +1085,6 @@ function updateDots() {
 function tick() {
   if (!isRunning) return;
 
-  if (isFreeDebate()) {
-    const elapsed = Math.floor((Date.now() - runStart) / 1000);
-    const remaining = Math.max(0, fdRunBase - elapsed);
-    if (fdActiveSide === "pro") fdProTime = remaining;
-    else if (fdActiveSide === "con") fdConTime = remaining;
-    if (remaining === 0 && !fdAlarmPlayed) {
-      playAlarm(); fdAlarmPlayed = true;
-      isRunning = false;
-      clearInterval(tickInterval); tickInterval = null;
-    }
-    if (remaining > 0 && remaining <= 10 && remaining !== fdLastSec) playTick();
-    fdLastSec = remaining;
-    updateDualTimerDisplay(); updateToggleBtn();
-    return;
-  }
-
   const elapsed = Math.floor((Date.now() - runStart) / 1000);
   let currentSec;
   if (runBaseIsOvertime) {
@@ -1588,17 +1095,7 @@ function tick() {
     if (remaining > 0) {
       timeLeft = remaining; isOvertime = false; overtime = 0; currentSec = remaining;
     } else {
-      if (!alarmPlayed) {
-        playAlarm(); alarmPlayed = true;
-        // Topic vote: stop at 0, auto-close voting
-        if (isTopicVote()) {
-          isRunning = false;
-          clearInterval(tickInterval); tickInterval = null;
-          db.ref("debate/config/topicVotingOpen").set(false).catch(() => {});
-          updateDisplay(); updateToggleBtn();
-          return;
-        }
-      }
+      if (!alarmPlayed) { playAlarm(); alarmPlayed = true; }
       timeLeft = 0; isOvertime = true; overtime = -remaining; currentSec = remaining;
     }
   }
@@ -1610,24 +1107,6 @@ function tick() {
 }
 
 function toggleTimer() {
-  if (isFreeDebate()) {
-    const done = fdProTime === 0 && fdConTime === 0;
-    if (done) return;
-    ensureAudio();
-    isRunning = !isRunning;
-    if (isRunning) {
-      if (fdActiveSide === null) fdActiveSide = "pro";
-      fdRunBase = fdActiveSide === "pro" ? fdProTime : fdConTime;
-      fdAlarmPlayed = false;
-      fdLastSec = fdRunBase;
-      runStart = Date.now();
-      tickInterval = setInterval(tick, 200);
-    } else {
-      clearInterval(tickInterval); tickInterval = null;
-    }
-    updateToggleBtn(); updateDualTimerDisplay();
-    return;
-  }
   if (STAGES[stageIndex][1] === 0) return;
   ensureAudio();
   isRunning = !isRunning;
@@ -1646,29 +1125,11 @@ function toggleTimer() {
 function resetTimer() {
   clearInterval(tickInterval); tickInterval = null;
   isRunning = false; overtime = 0; isOvertime = false;
-  if (isFreeDebate()) {
-    fdProTime = STAGES[stageIndex][1];
-    fdConTime = STAGES[stageIndex][1];
-    fdActiveSide = null; fdAlarmPlayed = false; fdLastSec = -1;
-    updateDualTimerDisplay(); updateToggleBtn();
-    return;
-  }
   stageTotalTime = STAGES[stageIndex][1]; timeLeft = stageTotalTime;
   updateDisplay();
 }
 
 function addTime(seconds) {
-  if (isFreeDebate()) {
-    if (!fdActiveSide) return;
-    if (fdActiveSide === "pro") fdProTime = Math.max(0, fdProTime + seconds);
-    else fdConTime = Math.max(0, fdConTime + seconds);
-    if (isRunning) {
-      fdRunBase = fdActiveSide === "pro" ? fdProTime : fdConTime;
-      runStart = Date.now();
-    }
-    updateDualTimerDisplay();
-    return;
-  }
   if (seconds > 0) {
     if (isOvertime) {
       if (overtime >= seconds) { overtime -= seconds; }
@@ -1692,37 +1153,17 @@ function loadStage() {
   isRunning = false; overtime = 0; isOvertime = false;
   stageTotalTime = STAGES[stageIndex][1]; timeLeft = stageTotalTime;
   stageSelect.value = stageIndex;
-  if (isFreeDebate()) {
-    fdProTime = STAGES[stageIndex][1];
-    fdConTime = STAGES[stageIndex][1];
-    fdActiveSide = null; fdAlarmPlayed = false; fdLastSec = -1;
-    showDualTimer();
-  } else {
-    hideDualTimer();
-    arcProgress.style.stroke = stageRingColor();
-  }
-  // Show/hide topic vote display
-  if (isTopicVote()) {
-    showTopicDisplay();
-    // Reset closed state so participants can vote again if stage reloaded
-    db.ref("debate/config/topicVotingOpen").set(true).catch(() => {});
-    // Reset countdown display
-    const cdEl = document.getElementById("tv-countdown");
-    if (cdEl) { cdEl.textContent = fmt(stageTotalTime || 480); cdEl.className = ""; }
-  } else {
-    hideTopicDisplay();
-  }
-  // Sync stage name to Firebase so vote.html knows current stage
-  db.ref("debate/config/currentStage").set(STAGES[stageIndex][0]).catch(() => {});
+  syncStageToFirebase();
 
-  // Question draw button: only relevant during 觀眾提問正方/反方
-  const stageName = STAGES[stageIndex][0];
-  questionSide = stageName === "觀眾提問正方" ? "正方" : stageName === "觀眾提問反方" ? "反方" : null;
-  commentSection.classList.toggle("qna-active", !!questionSide);
-  const drawBtn = document.getElementById("draw-question-btn");
-  if (drawBtn) drawBtn.textContent = questionSide ? `🎲 抽選提問（${questionSide}）` : "🎲 抽選提問";
-
+  renderVoteCard();
+  renderVoteOverlay();
   updateDisplay();
+}
+
+// Sync stage + active question to Firebase so vote.html knows what to show
+function syncStageToFirebase() {
+  db.ref("debate/config/currentStage").set(STAGES[stageIndex][0]).catch(() => {});
+  db.ref("debate/config/activeQuestion").set(stageQuestion()).catch(() => {});
 }
 
 function nextStage() { if (stageIndex < STAGES.length - 1) { stageIndex++; loadStage(); } }
@@ -1739,33 +1180,121 @@ STAGES.forEach(([name], i) => {
 stageSelect.addEventListener("change", () => { stageIndex = +stageSelect.value; loadStage(); });
 
 // ══════════════════════════════════════════════════════════════
-// FIREBASE: VOTES
+// FIREBASE: VOTES — per-question A/B/C + speaker vote
 // ══════════════════════════════════════════════════════════════
-db.ref("debate/votes").on("value", snap => {
-  const votes = snap.val() || {};
-  let pro = 0, con = 0;
-  Object.values(votes).forEach(v => {
-    if (v.side === "正方") pro++;
-    else if (v.side === "反方") con++;
+let qCounts       = QUESTIONS.map(() => [0, 0, 0]);
+let speakerCounts = SPEAKERS.map(() => 0);
+
+db.ref("debate/qVotes").on("value", snap => {
+  qCounts = QUESTIONS.map(() => [0, 0, 0]);
+  snap.forEach(qSnap => {
+    const qi = parseInt(qSnap.key);
+    if (!(qi >= 0 && qi < QUESTIONS.length)) return;
+    qSnap.forEach(vSnap => {
+      const oi = OPTION_LETTERS.indexOf((vSnap.val() || {}).choice);
+      if (oi >= 0) qCounts[qi][oi]++;
+    });
   });
-  const total = pro + con;
-
-  document.getElementById("pro-count").textContent = pro;
-  document.getElementById("con-count").textContent = con;
-  document.getElementById("vro-total").textContent = `共 ${total} 票`;
-
-  const pp = total === 0 ? 50 : Math.round(pro / total * 100);
-  const cp = 100 - pp;
-  document.getElementById("pro-pct").textContent   = total === 0 ? "—" : pp + "%";
-  document.getElementById("con-pct").textContent   = total === 0 ? "—" : cp + "%";
-  document.getElementById("vro-bar-pro").style.width = pp + "%";
-  document.getElementById("vro-bar-con").style.width = cp + "%";
-
-  document.getElementById("live-vote-total").textContent = `共 ${total} 票`;
-  document.getElementById("live-pct-pro").textContent = total === 0 ? "正方 —" : `正方 ${pp}%`;
-  document.getElementById("live-pct-con").textContent = total === 0 ? "— 反方" : `${cp}% 反方`;
-  document.getElementById("live-bar-pro").style.width = pp + "%";
+  renderVoteCard(); renderVoteOverlay();
 });
+
+db.ref("debate/speakerVotes").on("value", snap => {
+  speakerCounts = SPEAKERS.map(() => 0);
+  snap.forEach(vSnap => {
+    const si = (vSnap.val() || {}).speaker;
+    if (si >= 0 && si < SPEAKERS.length) speakerCounts[si]++;
+  });
+  renderVoteCard(); renderVoteOverlay();
+});
+
+function pctOf(n, total) { return total > 0 ? Math.round(n / total * 100) : 0; }
+
+// Right-panel card: live A/B/C during a question, speaker-vote status otherwise
+function renderVoteCard() {
+  const q     = stageQuestion();
+  const title = document.getElementById("vote-card-title");
+  const qEl   = document.getElementById("vote-card-question");
+  const rows  = document.getElementById("vote-card-rows");
+  const note  = document.getElementById("vote-card-note");
+  const totalEl = document.getElementById("live-vote-total");
+  rows.innerHTML = "";
+
+  if (q !== null) {
+    const counts = qCounts[q];
+    const total  = counts.reduce((a, b) => a + b, 0);
+    title.textContent   = `第 ${q+1} 題｜即時投票`;
+    qEl.textContent     = QUESTIONS[q].title;
+    totalEl.textContent = `共 ${total} 票`;
+    note.textContent    = "";
+    QUESTIONS[q].options.forEach((opt, i) => {
+      const cls = `opt-${OPTION_LETTERS[i].toLowerCase()}`;
+      const row = document.createElement("div"); row.className = "vc-row";
+      const letter = document.createElement("span"); letter.className = `opt-letter ${cls}`;
+      letter.textContent = OPTION_LETTERS[i];
+      const label = document.createElement("span"); label.className = "vc-label";
+      label.textContent = opt.short;
+      const bar  = document.createElement("div"); bar.className = "vc-bar";
+      const fill = document.createElement("div"); fill.className = `vc-fill ${cls}`;
+      fill.style.width = pctOf(counts[i], total) + "%";
+      bar.appendChild(fill);
+      const num = document.createElement("span"); num.className = "vc-num";
+      num.textContent = `${counts[i]} 票・${pctOf(counts[i], total)}%`;
+      row.append(letter, label, bar, num);
+      rows.appendChild(row);
+    });
+  } else {
+    const total = speakerCounts.reduce((a, b) => a + b, 0);
+    title.textContent   = "與談人票選";
+    qEl.textContent     = SPEAKER_VOTE_PROMPT;
+    totalEl.textContent = `共 ${total} 票`;
+    note.textContent    = STAGES[stageIndex][0] === SPEAKER_VOTE_STAGE
+      ? "請用手機投票，休息結束前都可以改選" : "結果由主持人公布";
+  }
+}
+
+// Fullscreen result: current question during Q stages, speaker ranking otherwise
+function renderVoteOverlay() {
+  const q     = stageQuestion();
+  const rowsEl = document.getElementById("vro-rows");
+  rowsEl.innerHTML = "";
+  let items, total;
+
+  if (q !== null) {
+    const counts = qCounts[q];
+    total = counts.reduce((a, b) => a + b, 0);
+    document.getElementById("vro-label").textContent = `第 ${q+1} 題｜投票結果`;
+    document.getElementById("vro-topic").textContent = QUESTIONS[q].title;
+    items = QUESTIONS[q].options.map((opt, i) => ({
+      badge: OPTION_LETTERS[i], cls: `opt-${OPTION_LETTERS[i].toLowerCase()}`, name: opt.short, n: counts[i]
+    }));
+  } else {
+    total = speakerCounts.reduce((a, b) => a + b, 0);
+    document.getElementById("vro-label").textContent = "與談人票選結果";
+    document.getElementById("vro-topic").textContent = SPEAKER_VOTE_PROMPT;
+    items = SPEAKERS.map((name, i) => ({ badge: String(i+1), cls: "opt-c", name, n: speakerCounts[i] }))
+      .sort((a, b) => b.n - a.n);
+  }
+  const max = Math.max(...items.map(it => it.n));
+  items.forEach(it => {
+    const row = document.createElement("div");
+    row.className = "vro-row" + (q === null && max > 0 && it.n === max ? " vro-winner" : "");
+    const badge = document.createElement("span"); badge.className = `opt-letter ${it.cls}`;
+    badge.textContent = it.badge;
+    const name = document.createElement("span"); name.className = "vro-name";
+    name.textContent = (q === null && max > 0 && it.n === max ? "🏆 " : "") + it.name;
+    const bar  = document.createElement("div"); bar.className = "vro-bar";
+    const fill = document.createElement("div"); fill.className = `vro-fill ${q === null ? "opt-a" : it.cls}`;
+    fill.style.width = pctOf(it.n, total) + "%";
+    bar.appendChild(fill);
+    const num = document.createElement("span"); num.className = "vro-num";
+    num.textContent = it.n;
+    const small = document.createElement("small"); small.textContent = `票・${pctOf(it.n, total)}%`;
+    num.appendChild(small);
+    row.append(badge, name, bar, num);
+    rowsEl.appendChild(row);
+  });
+  document.getElementById("vro-total").textContent = `共 ${total} 票`;
+}
 
 // ══════════════════════════════════════════════════════════════
 // FIREBASE: COMMENTS
@@ -1773,8 +1302,6 @@ db.ref("debate/votes").on("value", snap => {
 let isAdminMode = false;
 let commentsCache = [];
 let likesCache    = {};
-let questionSide  = null; // "正方" | "反方" | null — derived from current stage
-let questionsCache = {};  // id -> {nickname, text, side, drawn} from debate/questions
 
 db.ref("debate/comments").orderByChild("createdAt").on("value", snap => {
   commentsCache = [];
@@ -1804,18 +1331,6 @@ db.ref("debate/likes").on("value", snap => {
   });
 });
 
-// ── FIREBASE: TOPIC VOTES ──────────────────────────────────────
-db.ref("debate/topicVotes").on("value", snap => {
-  tvCounts = [0,0,0,0,0,0];
-  snap.forEach(deviceSnap => {
-    deviceSnap.forEach(topicSnap => {
-      const idx = parseInt(topicSnap.key);
-      if (!isNaN(idx) && idx >= 0 && idx < 6) tvCounts[idx]++;
-    });
-  });
-  if (isTopicVote()) renderTopicVotes();
-});
-
 function renderComments(list) {
   document.getElementById("comment-count").textContent = list.length ? `${list.length} 則` : "";
 
@@ -1829,7 +1344,7 @@ function renderComments(list) {
 
   list.forEach(c => {
     const item = document.createElement("div");
-    item.className = "comment-item " + (c.side === "正方" ? "pro" : c.side === "反方" ? "con" : "");
+    item.className = "comment-item";
     item.dataset.id = c.id;
 
     const meta = document.createElement("div"); meta.className = "comment-meta";
@@ -1892,11 +1407,6 @@ function setControlsEnabled(on) {
     d.style.pointerEvents = on ? "" : "none";
     d.style.cursor        = on ? "" : "default";
   });
-  // Switch-side btn (free debate)
-  const ssBtn = document.getElementById("switch-side-btn");
-  if (ssBtn && !on) ssBtn.disabled = true;
-  // Reset topic votes btn
-  document.getElementById("reset-topic-btn").style.display = on ? "inline-flex" : "none";
   // Toggle btn respects isAdminMode via updateToggleBtn()
   updateToggleBtn();
 }
@@ -1932,6 +1442,7 @@ function confirmAdmin() {
     commentSection.classList.add("admin-active");
     adminModal.classList.remove("open");
     setControlsEnabled(true);
+    syncStageToFirebase(); // phones follow this screen from now on
   } else {
     adminError.style.display = "block";
     adminPwd.select();
@@ -1959,68 +1470,6 @@ document.getElementById("vro-close-btn").addEventListener("click", () => {
 });
 
 // ══════════════════════════════════════════════════════════════
-// QUESTION DRAW (admin only) — 觀眾提問正方/反方
-// ══════════════════════════════════════════════════════════════
-db.ref("debate/questions").on("value", snap => {
-  questionsCache = snap.val() || {};
-});
-
-db.ref("debate/config/questionRevealed").on("value", snap => {
-  document.body.classList.toggle("question-revealed", snap.val() === true);
-});
-
-db.ref("debate/config/selectedQuestion").on("value", snap => {
-  const q = snap.val();
-  if (!q) return;
-  document.getElementById("qo-side").textContent = q.side;
-  document.getElementById("qo-side").className   = q.side === "正方" ? "pro" : "con";
-  document.getElementById("qo-text").textContent = q.text;
-});
-
-let drawSpinTimer = null;
-
-document.getElementById("draw-question-btn").addEventListener("click", () => {
-  if (!questionSide || drawSpinTimer) return;
-  const candidates = Object.entries(questionsCache)
-    .filter(([, q]) => q && q.side === questionSide && !q.drawn && !q.hidden);
-  if (candidates.length === 0) {
-    alert(`目前沒有${questionSide}的未抽提問`);
-    return;
-  }
-
-  const overlay = document.getElementById("question-overlay");
-  const sideEl  = document.getElementById("qo-side");
-  const textEl  = document.getElementById("qo-text");
-  overlay.classList.add("qo-spinning");
-  document.body.classList.add("question-revealed");
-
-  let ticks = 0;
-  const maxTicks = 14;
-  drawSpinTimer = setInterval(() => {
-    const [, q] = candidates[Math.floor(Math.random() * candidates.length)];
-    sideEl.textContent = q.side;
-    sideEl.className   = q.side === "正方" ? "pro" : "con";
-    textEl.textContent = q.text;
-    ticks++;
-    if (ticks >= maxTicks) {
-      clearInterval(drawSpinTimer);
-      drawSpinTimer = null;
-      overlay.classList.remove("qo-spinning");
-      const [finalId, finalQ] = candidates[Math.floor(Math.random() * candidates.length)];
-      db.ref(`debate/questions/${finalId}`).update({ drawn: true }).catch(() => {});
-      db.ref("debate/config/selectedQuestion").set({
-        id: finalId, text: finalQ.text, side: finalQ.side
-      }).catch(() => {});
-      db.ref("debate/config/questionRevealed").set(true).catch(() => {});
-    }
-  }, 80);
-});
-
-document.getElementById("qo-close-btn").addEventListener("click", () => {
-  db.ref("debate/config/questionRevealed").set(false);
-});
-
-// ══════════════════════════════════════════════════════════════
 // VOTE OPEN / CLOSE (admin only)
 // ══════════════════════════════════════════════════════════════
 let votingOpen = true;
@@ -2040,15 +1489,15 @@ document.getElementById("toggle-vote-btn").addEventListener("click", () => {
 // CLEAR VOTES (admin only)
 // ══════════════════════════════════════════════════════════════
 document.getElementById("clear-votes-btn").addEventListener("click", () => {
-  if (confirm("確定要清除所有投票紀錄嗎？此操作無法復原。")) {
-    db.ref("debate/votes").once("value", snap => {
-      const updates = {};
-      snap.forEach(child => { updates[child.key] = null; });
-      if (Object.keys(updates).length > 0) {
-        db.ref("debate/votes").update(updates);
-      }
+  if (!confirm("確定要清除所有投票紀錄（5 題＋與談人票選）嗎？此操作無法復原。")) return;
+  Promise.all([db.ref("debate/qVotes").once("value"), db.ref("debate/speakerVotes").once("value")])
+    .then(([qSnap, sSnap]) => {
+      const qUpdates = {}, sUpdates = {};
+      qSnap.forEach(q => q.forEach(v => { qUpdates[`${q.key}/${v.key}`] = null; }));
+      sSnap.forEach(v => { sUpdates[v.key] = null; });
+      if (Object.keys(qUpdates).length) db.ref("debate/qVotes").update(qUpdates);
+      if (Object.keys(sUpdates).length) db.ref("debate/speakerVotes").update(sUpdates);
     });
-  }
 });
 
 // ══════════════════════════════════════════════════════════════
@@ -2064,17 +1513,6 @@ document.getElementById("clear-comments-btn").addEventListener("click", () => {
 });
 
 // ══════════════════════════════════════════════════════════════
-// RESET TOPIC VOTES (admin only)
-// ══════════════════════════════════════════════════════════════
-document.getElementById("reset-topic-btn").addEventListener("click", () => {
-  if (confirm("確定要清除所有票選紀錄嗎？此操作無法復原。")) {
-    db.ref("debate/topicVotes").set(null).catch(() => {});
-    // Also re-open voting in case it was auto-closed
-    db.ref("debate/config/topicVotingOpen").set(true).catch(() => {});
-  }
-});
-
-// ══════════════════════════════════════════════════════════════
 // EXPORT
 // ══════════════════════════════════════════════════════════════
 function buildExportText(data) {
@@ -2084,19 +1522,35 @@ function buildExportText(data) {
   const lines   = [];
 
   lines.push("═══════════════════════════════════════");
-  lines.push("  生活之間：從住民到公民  辯論活動記錄");
+  lines.push("  自作自受的花蓮人 — 第四場辯論活動記錄");
   lines.push(`  匯出時間：${dateStr} ${timeStr}`);
   lines.push("═══════════════════════════════════════");
   lines.push("");
 
-  // 投票
-  const vList = Object.values(data.votes || {});
-  const pro   = vList.filter(v => v.side === "正方").length;
-  const con   = vList.filter(v => v.side === "反方").length;
-  lines.push("【即時投票結果】");
-  lines.push(`  正方：${pro} 票`);
-  lines.push(`  反方：${con} 票`);
-  lines.push(`  總計：${pro + con} 票`);
+  // 各題投票
+  QUESTIONS.forEach((q, qi) => {
+    const counts = [0, 0, 0];
+    Object.values((data.qVotes || {})[qi] || {}).forEach(v => {
+      const oi = OPTION_LETTERS.indexOf(v && v.choice);
+      if (oi >= 0) counts[oi]++;
+    });
+    const total = counts.reduce((a, b) => a + b, 0);
+    lines.push(`【第 ${qi+1} 題】${q.title}（共 ${total} 票）`);
+    q.options.forEach((opt, i) => {
+      lines.push(`  ${OPTION_LETTERS[i]}. ${opt.text}`);
+      lines.push(`     → ${counts[i]} 票（${pctOf(counts[i], total)}%）`);
+    });
+    lines.push("");
+  });
+
+  // 與談人票選
+  const sCounts = SPEAKERS.map(() => 0);
+  Object.values(data.speakerVotes || {}).forEach(v => {
+    if (v && v.speaker >= 0 && v.speaker < SPEAKERS.length) sCounts[v.speaker]++;
+  });
+  const sTotal = sCounts.reduce((a, b) => a + b, 0);
+  lines.push(`【與談人票選】（共 ${sTotal} 票）`);
+  SPEAKERS.forEach((name, i) => lines.push(`  ${name}：${sCounts[i]} 票（${pctOf(sCounts[i], sTotal)}%）`));
   lines.push("");
 
   // 留言
@@ -2113,46 +1567,29 @@ function buildExportText(data) {
       const d         = new Date(c.createdAt);
       const ts        = `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
       const who       = c.nickname || "匿名";
-      const tag       = c.side ? `（${c.side}）` : "";
       const likeCount = likes[key] ? Object.keys(likes[key]).length : 0;
       const likeStr   = likeCount > 0 ? `  👍${likeCount}` : "";
-      lines.push(`  [${ts}] ${who}${tag}：${c.text}${likeStr}`);
+      lines.push(`  [${ts}] ${who}：${c.text}${likeStr}`);
     });
   }
   lines.push("");
 
-  // 票選
-  const tvCounts = [0,0,0,0,0,0];
-  Object.values(data.topicVotes || {}).forEach(dev => {
-    if (typeof dev === "object") Object.keys(dev).forEach(idx => {
-      const i = parseInt(idx);
-      if (!isNaN(i) && i < 6) tvCounts[i]++;
-    });
-  });
-  const tvTotal = tvCounts.reduce((a,b) => a+b, 0);
-  lines.push("【下期題目票選結果】");
-  TOPICS.forEach((topic, i) => {
-    const pct = tvTotal > 0 ? Math.round(tvCounts[i] / tvTotal * 100) : 0;
-    lines.push(`  ${i+1}. ${topic}`);
-    lines.push(`     → ${tvCounts[i]} 票（${pct}%）`);
-  });
-  lines.push("");
   lines.push("═══════════════════════════════════════");
   return lines.join("\n");
 }
 
 document.getElementById("export-btn").addEventListener("click", () => {
   Promise.all([
-    db.ref("debate/votes").once("value"),
+    db.ref("debate/qVotes").once("value"),
+    db.ref("debate/speakerVotes").once("value"),
     db.ref("debate/comments").once("value"),
     db.ref("debate/likes").once("value"),
-    db.ref("debate/topicVotes").once("value"),
-  ]).then(([votesSnap, commentsSnap, likesSnap, topicSnap]) => {
+  ]).then(([qSnap, speakerSnap, commentsSnap, likesSnap]) => {
     const data = {
-      votes:       votesSnap.val()   || {},
-      comments:    commentsSnap.val()|| {},
-      likes:       likesSnap.val()   || {},
-      topicVotes:  topicSnap.val()   || {},
+      qVotes:       qSnap.val()        || {},
+      speakerVotes: speakerSnap.val()  || {},
+      comments:     commentsSnap.val() || {},
+      likes:        likesSnap.val()    || {},
     };
     const text = buildExportText(data);
     const ta   = document.getElementById("export-textarea");
@@ -2209,21 +1646,6 @@ document.getElementById("qr-close").addEventListener("click", () =>
 // ══════════════════════════════════════════════════════════════
 // BUTTONS & KEYBOARD
 // ══════════════════════════════════════════════════════════════
-document.getElementById("switch-side-btn").addEventListener("click", () => {
-  if (!isFreeDebate()) return;
-  const newSide = fdActiveSide === "con" ? "pro" : "con";
-  const newTime = newSide === "pro" ? fdProTime : fdConTime;
-  if (newTime === 0) return;
-  fdActiveSide = newSide;
-  fdAlarmPlayed = false;
-  if (isRunning) {
-    fdRunBase = newTime;
-    runStart  = Date.now();
-    fdLastSec = newTime;
-  }
-  updateDualTimerDisplay();
-});
-
 document.getElementById("btn-prev").addEventListener("click",   prevStage);
 document.getElementById("btn-toggle").addEventListener("click", toggleTimer);
 document.getElementById("btn-next").addEventListener("click",   nextStage);
@@ -2266,16 +1688,12 @@ document.addEventListener("keydown", e => {
 // FIREBASE CLEANUP  — detach all listeners on page unload
 // ══════════════════════════════════════════════════════════════
 window.addEventListener("beforeunload", () => {
-  db.ref("debate/votes").off();
+  db.ref("debate/qVotes").off();
+  db.ref("debate/speakerVotes").off();
   db.ref("debate/comments").off();
   db.ref("debate/likes").off();
   db.ref("debate/config/votingOpen").off();
   db.ref("debate/config/voteRevealed").off();
-  db.ref("debate/topicVotes").off();
-  db.ref("debate/config/currentStage").off();
-  db.ref("debate/questions").off();
-  db.ref("debate/config/questionRevealed").off();
-  db.ref("debate/config/selectedQuestion").off();
 });
 
 // ══════════════════════════════════════════════════════════════
@@ -2285,6 +1703,8 @@ arcProgress.style.strokeDasharray  = CIRCUMFERENCE;
 arcProgress.style.strokeDashoffset = 0;
 buildDots();
 setControlsEnabled(false); // all controls locked until admin login
+renderVoteCard();
+renderVoteOverlay();
 updateDisplay();
 </script>
 </body>
