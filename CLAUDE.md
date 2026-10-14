@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Deploy
 
 ```bash
-git add index.html vote.html questions.html assets/
+git add index.html vote.html assets/
 git commit -m "..."
 git push origin main   # GitHub Pages auto-deploys from main branch
 ```
@@ -24,15 +24,14 @@ Changes are live within ~1 minute of push. No build or CI step.
 
 | File | Role |
 |---|---|
-| `index.html` | Admin / main display — shown on the presenter's screen. Controls timer, manages stages, displays live votes and comments, draws/reveals audience questions. |
-| `vote.html` | Participant page — opened on phones via QR code. Submits votes, comments, likes, topic ballot votes, and anonymous questions for 正方/反方. |
-| `questions.html` | Standalone admin page (separate URL, own password gate) for moderating submitted questions — not linked from index.html. |
+| `index.html` | Admin / main display — shown on the presenter's screen. Controls timer, manages stages, shows live A/B/C results of the current question, speaker-vote status, comments, and the fullscreen result overlay. |
+| `vote.html` | Participant page — opened on phones via QR code. Votes A/B/C on the current question, votes for a speaker during the break, posts comments and likes. |
 
 ### Visual theme
 
-All three pages share the 「漫畫爆炸」(comic pop) theme: cream halftone paper background, 3–5px black borders, hard offset shadows, skewed labels. Colors are CSS custom properties in each file's `:root` (`--red` 正方, `--blue` 反方, `--yellow` accent, `--ink`). The header logo is `assets/title.webp` (event key visual, transparent background). Fonts load from Google Fonts: Noto Sans TC (text) and Bungee (digits).
+Both pages share the 「漫畫爆炸」(comic pop) theme: cream halftone paper background, 3–5px black borders, hard offset shadows, skewed labels. Colors are CSS custom properties in each file's `:root` (`--red`, `--blue`, `--yellow` accent, `--ink`). The header logo is `assets/title.webp` (event key visual, transparent background). Fonts load from Google Fonts: Noto Sans TC (text) and Bungee (digits).
 
-`index.html` layout (matches the design mockup): header = series name / title logo / stage chip (`#progress-text`) + QR button; left panel = stage banner → timer → control buttons → stage dots → next-stage line, plus an admin-only `#admin-tools` row (stage dropdown, ±60, fullscreen) shown via `body.admin-mode` (toggled in `setControlsEnabled()`); right panel = live vote bar (`#vote-card`, updated in the `debate/votes` listener) + comment panel.
+`index.html` layout (matches the design mockup): header = series name / title logo / stage chip (`#progress-text`) + QR button; left panel = stage banner → timer → control buttons → stage dots → next-stage line, plus an admin-only `#admin-tools` row (stage dropdown, ±60, fullscreen) shown via `body.admin-mode` (toggled in `setControlsEnabled()`); right panel = live vote card (`#vote-card`, rendered by `renderVoteCard()`: current question's A/B/C bars, or speaker-vote status outside question stages) + comment panel. Option colors: A `--opt-a` red, B `--opt-b` blue, C `--opt-c` yellow.
 
 In `index.html`, JS reads `--cream` / `--coral` / `--orange` / `--sky` / `--warn` / `--alert` / `--gray-blue` via `getComputedStyle` for timer ring and side-label colors, so those names are kept as aliases of the theme colors.
 
@@ -44,58 +43,44 @@ All state is shared via Firebase. No backend code exists — everything is clien
 ```
 debate/
   config/
-    currentStage      String  — stage name synced from index.html on every loadStage()
-    votingOpen        Boolean — controls whether 觀眾投票 is accepting votes
-    topicVotingOpen   Boolean — controls whether 下期題目票選 is accepting votes
-    voteRevealed      Boolean — controls fullscreen vote-result overlay on index.html
-    questionRevealed  Boolean — controls fullscreen drawn-question overlay on index.html
-    selectedQuestion  Object  — { id, text, side } of the currently drawn question (no nickname — questions are anonymous)
-  votes/
-    {deviceId}/      { nickname, side, updatedAt }
+    currentStage      String  — stage name synced from index.html (loadStage() and on admin login)
+    activeQuestion    Number|null — 0–4 while a question's stages run, else null; vote.html votes only on this question
+    votingOpen        Boolean — admin kill-switch for all voting
+    voteRevealed      Boolean — controls fullscreen result overlay on index.html
+  qVotes/
+    {questionIndex}/
+      {deviceId}/    { nickname, choice: "A"|"B"|"C", updatedAt }
+  speakerVotes/
+    {deviceId}/      { nickname, speaker: 0–3, updatedAt }   — only during "觀眾投票／休息"
   comments/
-    {pushId}/        { nickname, text, side, createdAt, deleted }
+    {pushId}/        { nickname, text, createdAt, deleted }  (old entries may still carry `side`; ignored)
   likes/
     {commentId}/
       {deviceId}     true
-  topicVotes/
-    {deviceId}/
-      {topicIndex}   true
-  questions/
-    {pushId}/        { text, side, createdAt, drawn, hidden }  — no nickname; submitted anonymously from vote.html at any time
 ```
+Legacy paths `votes`, `topicVotes`, `questions`, `config/topicVotingOpen|questionRevealed|selectedQuestion` are no longer read or written.
 
 **Firebase rules** must explicitly grant `.read`/`.write` per sub-node. Reading a parent node (`debate/`) fails silently if the parent has no `.read` rule — always read individual sub-nodes.
 
 ### Stage system (index.html)
 
-`STAGES` array drives everything: each entry is `[name, durationSeconds]`. Duration `0` = no timer (end states). Special stage names trigger different UI modes:
+`STAGES` is built from `QUESTIONS`: each entry is `[name, durationSeconds, questionIndex?]`. Per question (15 min): `第N題｜選邊站・投票` 180s → `第N題｜與談人立場說明` 480s → `第N題｜觀眾發言 1` 120s → `第N題｜觀眾發言 2` 120s. Then `觀眾投票／休息` 600s (= `SPEAKER_VOTE_STAGE`), `頒獎時間` 300s, `與談人分享` 900s, `活動結束` 0.
 
-- `"自由辯論"` → dual-circle timer (正方/反方 independent countdowns)
-- `"下期題目票選"` → full-width topic ballot display, 8-minute timer, auto-closes voting at 0
-- `"活動結束"` → terminal state
-
-`loadStage()` is the central function: stops timer, resets state, syncs `currentStage` to Firebase, shows/hides UI panels.
+`stageQuestion()` returns the entry's question index (or null). `loadStage()` stops the timer, resets state, calls `syncStageToFirebase()` (writes `currentStage` + `activeQuestion`), then re-renders the vote card / overlay. The "公布結果" overlay (`renderVoteOverlay()`) shows the current question's A/B/C results during question stages, otherwise the speaker ranking (sorted, winner highlighted).
 
 ### Admin gate (index.html)
 
-All timer/nav controls are `disabled` on load. `setControlsEnabled(bool)` enables/disables: prev/next stage, toggle, reset, ±time buttons, stage-select dropdown, dot bar navigation, switch-side button, and the reset-topic-votes button. Password is hardcoded as `ADMIN_PASSWORD`.
+All timer/nav controls are `disabled` on load. `setControlsEnabled(bool)` enables/disables: prev/next stage, toggle, reset, ±time buttons, stage-select dropdown, dot bar navigation, and toggles `body.admin-mode`. Password is hardcoded as `ADMIN_PASSWORD` (index.html only). Logging in also syncs the current stage to Firebase so phones follow this screen.
 
 Keyboard shortcuts (space/arrows/R/F11) are also blocked when not admin.
 
-### vote.html stage switching
+### vote.html voting
 
-`vote.html` listens to `debate/config/currentStage` and switches between three section states:
-- Normal: shows `#vote-section`, `#comment-section`, `#feed-section`
-- Topic ballot (`"下期題目票選"`): shows `#topic-vote-section` only
-- Voting closed: `votingAllowed` flag blocks `castVote()`; `topicVotingAllowed` flag blocks `handleTopicVote()`
-
-### Audience questions (提問正方/反方)
-
-Unlike voting/comments, question submission is **not** tied to a specific stage. In `vote.html`, a persistent `#question-fab` ("🙋 提問" button, always visible) opens `#question-modal`: the participant picks 正方 or 反方 first, then types the question. Submissions are anonymous — no `nickname` field is written — and push to `debate/questions`.
-
-`questions.html` is a separate, unlinked admin page (own password gate, same `ADMIN_PASSWORD`) for moderating the pool: lists questions per side with live counts, "刪除" soft-deletes a question (`hidden: true`), "清空全部提問" soft-deletes everything currently visible. Hidden questions are filtered out everywhere (admin list and draw candidates) but never physically removed, matching the soft-delete convention used for `comments`.
-
-On `index.html`, the draw flow itself is unchanged from before and still stage-gated: the `#draw-question-btn` admin control only appears during `"觀眾提問正方"` / `"觀眾提問反方"` (`.admin-active.qna-active` gate, `qna-active` toggled in `loadStage()`). Clicking it runs a client-side "slot machine" animation over undrawn, non-hidden candidates for the active side, then writes the winner to `debate/config/selectedQuestion`, marks it `drawn: true`, and sets `debate/config/questionRevealed = true` to trigger the `#question-overlay` fullscreen reveal (same show/hide pattern as `#vote-result-overlay`).
+`vote.html` listens to `config/activeQuestion` and `config/currentStage` and picks a mode in `refreshVoteMode()`:
+- `question`: shows the question + A/B/C buttons with full option text; listens to `qVotes/{q}` for own choice and counts; after voting shows the live ratio. Can change choice while the question is active.
+- `speaker`: during `觀眾投票／休息`, shows the 4 speakers; listens only to own `speakerVotes/{deviceId}` (results stay hidden until announced on the big screen).
+- `idle`: no active vote.
+`votingOpen === false` disables all vote buttons.
 
 ### Performance patterns
 
@@ -103,9 +88,9 @@ On `index.html`, the draw flow itself is unchanged from before and still stage-g
 - **Like debounce**: `likingInFlight` Set prevents double-tap race conditions
 - **Firebase cleanup**: `beforeunload` calls `.off()` on all refs in both files
 
-### Topics constant
+### Questions / speakers constants
 
-Both files contain an identical `TOPICS` array (6 strings). If topics change, update both files.
+Both files contain identical `QUESTIONS` (title + options with `short` label for the big screen and full `text` for phones), `OPTION_LETTERS`, `SPEAKER_VOTE_STAGE`, `SPEAKER_VOTE_PROMPT` and `SPEAKERS`. If any change, update both files.
 
 ## Firebase Rules Reference
 
@@ -115,12 +100,11 @@ Current rules structure (update in Firebase Console if adding new paths):
 {
   "rules": {
     "debate": {
-      "config":     { ".read": true, ".write": true },
-      "votes":      { ".read": true, "$deviceId": { ".write": true } },
-      "comments":   { ".read": true, "$commentId": { ".write": "..." } },
-      "likes":      { ".read": true, "$commentId": { "$deviceId": { ".write": true } } },
-      "topicVotes": { ".read": true, "$deviceId": { ".write": true } },
-      "questions":  { ".read": true, "$questionId": { ".write": "!data.exists() || (data.child('drawn').val() !== true && newData.child('drawn').val() === true) || (data.child('hidden').val() !== true && newData.child('hidden').val() === true)" } }
+      "config":       { ".read": true, ".write": true },
+      "qVotes":       { ".read": true, "$q": { "$deviceId": { ".write": true } } },
+      "speakerVotes": { ".read": true, "$deviceId": { ".write": true } },
+      "comments":     { ".read": true, "$commentId": { ".write": "..." } },
+      "likes":        { ".read": true, "$commentId": { "$deviceId": { ".write": true } } }
     }
   }
 }

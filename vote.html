@@ -20,7 +20,9 @@
     --yellow-lt: #FFE766;
     --muted:     #555555;
     --pro-tint:  #FFF0EE;
-    --con-tint:  #EEF1FF;
+    --opt-a:     var(--red);
+    --opt-b:     var(--blue);
+    --opt-c:     var(--yellow);
     --warn:      #C25E00;
     --alert:     #C8001E;
     --shadow:    5px 5px 0 var(--ink);
@@ -127,7 +129,7 @@
   /* ══════════════════════════════════════
      MAIN APP
   ══════════════════════════════════════ */
-  #app-screen { display: none; flex-direction: column; min-height: 100vh; padding-bottom: 96px; }
+  #app-screen { display: none; flex-direction: column; min-height: 100vh; padding-bottom: 32px; }
 
   /* Header */
   #app-header {
@@ -208,68 +210,70 @@
     text-align: center;
     margin-bottom: 12px;
   }
-  #vote-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
+  #vote-question {
+    font-size: 18px;
+    font-weight: 900;
+    line-height: 1.5;
     margin-bottom: 14px;
   }
-  .vote-btn {
-    height: 92px;
+  #vote-options { display: flex; flex-direction: column; gap: 12px; }
+  .opt-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 64px;
+    padding: 10px 14px;
+    text-align: left;
+    background: var(--white);
     border: 4px solid var(--ink);
     border-radius: 0;
-    font-size: 28px;
-    font-weight: 900;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    background: var(--white);
     box-shadow: var(--shadow-sm);
-    transform: skew(-6deg);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.45;
+    cursor: pointer;
     transition: transform 0.08s, box-shadow 0.08s, background 0.15s;
   }
-  .vote-btn:active { transform: skew(-6deg) translate(3px, 3px); box-shadow: none; }
-  .vote-btn .btn-label { font-family: var(--font-num); font-size: 12px; font-weight: 400; letter-spacing: 0.06em; }
-
-  .vote-btn.pro { color: var(--red-dk); }
-  .vote-btn.con { color: var(--blue); }
-  .vote-btn.pro.selected { background: var(--red);  color: var(--white); box-shadow: var(--shadow); }
-  .vote-btn.con.selected { background: var(--blue); color: var(--white); box-shadow: var(--shadow); }
-
-  /* Vote tally bar — hidden until admin reveals */
-  #vote-tally {
-    display: none;
-    flex-direction: column;
-    gap: 8px;
-  }
-  body.vote-revealed #vote-tally,
-  body.admin-logged-in #vote-tally { display: flex; }
-
-  /* Admin FAB */
-  #admin-fab {
-    position: fixed;
-    bottom: 24px;
-    right: 16px;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: var(--white);
-    border: 3px solid var(--ink);
-    color: var(--muted);
+  .opt-btn:active { transform: translate(3px, 3px); box-shadow: none; }
+  .opt-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+  .opt-btn.selected { box-shadow: var(--shadow); font-weight: 900; }
+  .opt-btn.selected.sel-a { background: var(--opt-a); color: var(--white); }
+  .opt-btn.selected.sel-b { background: var(--opt-b); color: var(--white); }
+  .opt-btn.selected.sel-c { background: var(--opt-c); color: var(--ink); }
+  .opt-btn.selected.sel-speaker { background: var(--yellow); color: var(--ink); }
+  .opt-letter {
+    flex-shrink: 0;
+    width: 38px; height: 38px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--font-num);
     font-size: 18px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 200;
+    border: 3px solid var(--ink);
+    color: var(--white);
   }
-  body.admin-logged-in #admin-fab { background: var(--yellow); color: var(--ink); }
+  .opt-a { background: var(--opt-a); }
+  .opt-b { background: var(--opt-b); }
+  .opt-c { background: var(--opt-c); color: var(--ink); }
+  .opt-n { background: var(--white); color: var(--ink); }
+  .opt-btn.selected .opt-letter { border-color: var(--white); }
+  .opt-btn.selected.sel-c .opt-letter,
+  .opt-btn.selected.sel-speaker .opt-letter { border-color: var(--ink); }
+  #vote-hint { font-size: 14px; font-weight: 700; color: var(--muted); text-align: center; margin-top: 12px; }
+  #vote-hint:empty { display: none; }
+  #vote-hint strong { color: var(--ink); background: var(--yellow); padding: 0 4px; }
+
+  /* Results of the current question (shown after voting) */
+  #vote-results { display: none; flex-direction: column; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 3px dashed var(--ink); }
+  #vote-results.show { display: flex; }
+  .vr-title { font-size: 14px; font-weight: 900; }
+  .vr-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; }
+  .vr-row .opt-letter { width: 28px; height: 28px; font-size: 13px; }
+  .vr-bar { height: 20px; border: 3px solid var(--ink); background: var(--white); overflow: hidden; }
+  .vr-fill { height: 100%; width: 0%; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+  .vr-num { font-size: 13px; font-weight: 900; min-width: 5.5em; text-align: right; white-space: nowrap; }
 
   /* Modals (shared look) */
-  #admin-modal, #question-modal, #nick-modal {
+  #nick-modal {
     display: none;
     position: fixed;
     inset: 0;
@@ -279,8 +283,8 @@
     justify-content: center;
     padding: 20px;
   }
-  #admin-modal.open, #question-modal.open, #nick-modal.open { display: flex; }
-  #admin-modal-box, #question-modal-box, #nick-modal-box {
+  #nick-modal.open { display: flex; }
+  #nick-modal-box {
     background: var(--white);
     border: 5px solid var(--ink);
     box-shadow: 8px 8px 0 var(--ink);
@@ -290,13 +294,13 @@
     flex-direction: column;
     gap: 16px;
   }
-  #admin-modal-box h3, #question-modal-box h3, #nick-modal-box h3 {
+  #nick-modal-box h3 {
     font-size: 20px;
     font-weight: 900;
     color: var(--ink);
     text-align: center;
   }
-  #admin-pwd-input, #new-nick-input {
+  #new-nick-input {
     width: 100%;
     height: 50px;
     background: var(--paper);
@@ -309,15 +313,8 @@
     color: var(--ink);
     outline: none;
   }
-  #admin-pwd-error {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--alert);
-    text-align: center;
-    display: none;
-  }
-  .admin-modal-btns, .nick-modal-btns { display: flex; gap: 10px; }
-  .adm-btn, .nm-btn {
+  .nick-modal-btns { display: flex; gap: 10px; }
+  .nm-btn {
     flex: 1;
     height: 50px;
     border: 3px solid var(--ink);
@@ -327,146 +324,9 @@
     cursor: pointer;
     box-shadow: var(--shadow-sm);
   }
-  .adm-btn:active, .nm-btn:active { transform: translate(3px, 3px); box-shadow: none; }
-  .adm-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
-  .adm-btn.cancel, .nm-btn.cancel { background: var(--white); color: var(--ink); }
-  .adm-btn.ok,     .nm-btn.ok     { background: var(--yellow); color: var(--ink); }
-
-  /* Admin stats bar (visible when logged in) */
-  #admin-stats-bar {
-    display: none;
-    background: var(--yellow);
-    border: 3px solid var(--ink);
-    padding: 8px 12px;
-    margin: 14px 16px 0;
-    gap: 10px;
-    align-items: center;
-    font-size: 14px;
-  }
-  body.admin-logged-in #admin-stats-bar { display: flex; }
-  #admin-stats-bar .adm-label {
-    font-size: 12px;
-    font-weight: 900;
-    color: var(--yellow);
-    background: var(--ink);
-    padding: 1px 6px;
-    white-space: nowrap;
-  }
-  #admin-stats-bar .adm-counts {
-    flex: 1;
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-  }
-  #admin-stats-bar .adm-pro { color: var(--red-dk); font-weight: 900; }
-  #admin-stats-bar .adm-con { color: var(--blue); font-weight: 900; }
-  #admin-stats-bar .adm-total { color: var(--ink); font-weight: 700; }
-  #admin-logout-btn {
-    background: var(--white);
-    border: 2px solid var(--ink);
-    font-size: 13px;
-    font-weight: 900;
-    height: 36px;
-    padding: 0 10px;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .tally-bar-wrap {
-    height: 22px;
-    border: 3px solid var(--ink);
-    background: var(--white);
-    display: flex;
-    overflow: hidden;
-  }
-  #tally-bar-pro {
-    background: var(--red);
-    height: 100%;
-    transition: width 0.8s cubic-bezier(.4,0,.2,1);
-    width: 50%;
-  }
-  #tally-bar-con {
-    background: var(--blue);
-    height: 100%;
-    flex: 1;
-    transition: width 0.8s cubic-bezier(.4,0,.2,1);
-  }
-  .tally-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 14px;
-  }
-  .tally-pro { color: var(--red-dk); font-weight: 900; }
-  .tally-con { color: var(--blue); font-weight: 900; }
-  .tally-total { color: var(--ink); font-weight: 700; }
-  #my-vote-status {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--muted);
-    text-align: center;
-  }
-  #my-vote-status strong { color: var(--ink); background: var(--yellow); padding: 0 4px; }
-
-  /* ── Question FAB ── */
-  #question-fab {
-    position: fixed;
-    bottom: 22px;
-    left: 50%;
-    transform: translateX(-50%) rotate(-2deg);
-    background: var(--red);
-    color: var(--white);
-    border: 4px solid var(--ink);
-    border-radius: 999px;
-    height: 58px;
-    padding: 0 28px;
-    font-size: 18px;
-    font-weight: 900;
-    cursor: pointer;
-    box-shadow: var(--shadow);
-    z-index: 200;
-    transition: transform 0.08s, box-shadow 0.08s;
-  }
-  #question-fab:active { transform: translateX(-50%) rotate(-2deg) translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
-
-  /* ── Question Modal ── */
-  #qm-side-picker { display: flex; gap: 12px; }
-  .qm-side-btn {
-    flex: 1;
-    height: 60px;
-    border: 4px solid var(--ink);
-    border-radius: 0;
-    background: var(--white);
-    font-size: 20px;
-    font-weight: 900;
-    cursor: pointer;
-    transform: skew(-6deg);
-    box-shadow: var(--shadow-sm);
-  }
-  .qm-side-btn.pro { color: var(--red-dk); }
-  .qm-side-btn.con { color: var(--blue); }
-  .qm-side-btn.pro.selected { background: var(--red);  color: var(--white); }
-  .qm-side-btn.con.selected { background: var(--blue); color: var(--white); }
-  #qm-form { display: none; flex-direction: column; gap: 10px; }
-  #qm-form.open { display: flex; }
-  #qm-target-label { font-size: 14px; font-weight: 700; color: var(--muted); text-align: center; }
-  #qm-target-label strong { color: var(--ink); }
-  #qm-textarea {
-    background: var(--paper);
-    border: 3px solid var(--ink);
-    border-radius: 0;
-    padding: 12px 14px;
-    color: var(--ink);
-    font-size: 16px;
-    font-family: inherit;
-    line-height: 1.5;
-    resize: none;
-    width: 100%;
-    min-height: 90px;
-    outline: none;
-  }
-  #qm-textarea::placeholder { color: var(--muted); }
-  #qm-char-count { font-size: 13px; font-weight: 700; color: var(--muted); text-align: right; }
-  #qm-char-count.warn { color: var(--warn); }
-  #qm-char-count.over { color: var(--alert); }
+  .nm-btn:active { transform: translate(3px, 3px); box-shadow: none; }
+  .nm-btn.cancel { background: var(--white); color: var(--ink); }
+  .nm-btn.ok     { background: var(--yellow); color: var(--ink); }
 
   /* ── Comment Input ── */
   #comment-input-wrap {
@@ -516,7 +376,7 @@
   /* Toast */
   #toast {
     position: fixed;
-    bottom: 96px;
+    bottom: 28px;
     left: 50%;
     transform: translateX(-50%) translateY(20px);
     background: var(--ink);
@@ -565,8 +425,6 @@
     to   { opacity: 1; transform: none; }
   }
   @media (prefers-reduced-motion: reduce) { .feed-item { animation: none; } }
-  .feed-item.pro { background: var(--pro-tint); box-shadow: inset 6px 0 0 var(--red); }
-  .feed-item.con { background: var(--con-tint); box-shadow: inset 6px 0 0 var(--blue); }
   .feed-meta {
     display: flex;
     justify-content: space-between;
@@ -575,8 +433,6 @@
     margin-bottom: 4px;
   }
   .feed-nick { font-size: 14px; font-weight: 900; color: var(--ink); }
-  .feed-item.pro .feed-nick { color: var(--red-dk); }
-  .feed-item.con .feed-nick { color: var(--blue); }
   .feed-time { font-size: 12px; font-weight: 700; color: var(--muted); }
   .feed-text { font-size: 15px; color: var(--ink); line-height: 1.5; word-break: break-word; }
   #feed-empty { font-size: 15px; font-weight: 700; color: var(--muted); text-align: center; padding: 32px 0; }
@@ -596,101 +452,6 @@
   .like-btn.liked { background: var(--yellow); }
   .like-btn:active { transform: scale(0.93); }
 
-  /* ── Topic Vote Section (vote.html) ── */
-  #topic-vote-section {
-    display: none;
-    flex-direction: column;
-    padding-bottom: 32px;
-  }
-  #tv-instruction {
-    font-size: 15px;
-    font-weight: 500;
-    color: var(--ink);
-    line-height: 1.6;
-    margin-bottom: 10px;
-  }
-  #tv-my-status {
-    font-size: 15px;
-    font-weight: 900;
-    color: var(--ink);
-  }
-  #tv-my-status span { font-family: var(--font-num); font-size: 20px; color: var(--red-dk); }
-  #tv-cards-list { display: flex; flex-direction: column; gap: 12px; padding: 18px 16px 0; }
-
-  .tv-card {
-    background: var(--white);
-    border: 3px solid var(--ink);
-    box-shadow: var(--shadow-sm);
-    padding: 13px 14px;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-  .tv-card.tv-selected { background: var(--yellow-lt); box-shadow: var(--shadow); }
-  .tv-card.tv-full:not(.tv-selected) { opacity: 0.45; cursor: not-allowed; }
-  .tv-card.tv-closed { opacity: 0.38; cursor: not-allowed; pointer-events: none; }
-  #tv-closed-notice {
-    background: var(--pro-tint);
-    border: 3px solid var(--alert);
-    padding: 10px 14px;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--alert);
-    text-align: center;
-    margin: 14px 16px 0;
-    display: none;
-  }
-  .tv-card-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  .tv-check {
-    width: 24px; height: 24px;
-    border: 3px solid var(--ink);
-    background: var(--white);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px;
-    font-weight: 900;
-    color: transparent;
-    flex-shrink: 0;
-  }
-  .tv-card.tv-selected .tv-check { background: var(--red); color: var(--white); }
-  .tv-num {
-    font-family: var(--font-num);
-    font-size: 14px;
-    color: var(--ink);
-    flex-shrink: 0; padding-top: 2px;
-  }
-  .tv-text {
-    font-size: 15px; font-weight: 900;
-    color: var(--ink); line-height: 1.45; flex: 1;
-  }
-  /* Results bar (hidden until user votes) */
-  .tv-results {
-    display: none;
-    align-items: center;
-    gap: 8px;
-    padding-left: 34px;
-    margin-top: 10px;
-  }
-  #topic-vote-section.tv-voted .tv-results { display: flex; }
-  .tv-bar-bg {
-    flex: 1; height: 14px;
-    background: var(--white);
-    border: 2px solid var(--ink);
-    overflow: hidden;
-  }
-  .tv-bar-fill {
-    height: 100%; background: #9A9A9A;
-    transition: width 0.7s cubic-bezier(.4,0,.2,1);
-    width: 0%;
-  }
-  .tv-card.tv-selected .tv-bar-fill { background: var(--red); }
-  .tv-count-text {
-    font-size: 13px; font-weight: 900;
-    color: var(--ink);
-    white-space: nowrap; min-width: 32px; text-align: right;
-  }
 </style>
 </head>
 <body>
@@ -722,45 +483,14 @@
     </div>
   </div>
 
-  <!-- Vote Section -->
+  <!-- Vote Section — current question (A/B/C) or speaker vote -->
   <div class="app-section" id="vote-section">
-    <div class="section-label" id="vote-section-label">投票（可隨時更改）</div>
-    <div id="vote-closed-notice" style="display:none;">
-      投票目前已關閉，請等待主持人開放
-    </div>
-    <div id="vote-buttons">
-      <button class="vote-btn pro" id="vote-pro">
-        正方
-        <span class="btn-label">PRO</span>
-      </button>
-      <button class="vote-btn con" id="vote-con">
-        反方
-        <span class="btn-label">CON</span>
-      </button>
-    </div>
-    <div id="vote-tally">
-      <div class="tally-bar-wrap">
-        <div id="tally-bar-pro"></div>
-        <div id="tally-bar-con"></div>
-      </div>
-      <div class="tally-row">
-        <span class="tally-pro" id="tally-pro-text">正方 0票</span>
-        <span class="tally-total" id="tally-total-text">共 0 票</span>
-        <span class="tally-con" id="tally-con-text">0票 反方</span>
-      </div>
-      <div id="my-vote-status">尚未投票</div>
-    </div>
-  </div>
-
-  <!-- Admin stats bar (only visible when admin logged in) -->
-  <div id="admin-stats-bar">
-    <span class="adm-label">管理員</span>
-    <div class="adm-counts">
-      <span class="adm-pro" id="adm-pro-text">正方 0票</span>
-      <span class="adm-total" id="adm-total-text">共 0 票</span>
-      <span class="adm-con" id="adm-con-text">0票 反方</span>
-    </div>
-    <button id="admin-logout-btn">登出</button>
+    <div class="section-label" id="vote-section-label">投票</div>
+    <div id="vote-closed-notice" style="display:none;">投票目前已關閉，請等待主持人開放</div>
+    <div id="vote-question"></div>
+    <div id="vote-options"></div>
+    <div id="vote-hint"></div>
+    <div id="vote-results"></div>
   </div>
 
   <!-- Comment Input -->
@@ -786,56 +516,6 @@
     </div>
   </div>
 
-  <!-- Topic Vote Section (下期題目票選 stage) -->
-  <div id="topic-vote-section">
-    <div class="app-section" style="padding-bottom:12px">
-      <div class="section-label">下期題目票選</div>
-      <div id="tv-instruction">選出你最想辯論的下期題目<br>最多可投 <strong>2 票</strong>，可取消後重投</div>
-      <div id="tv-my-status">已選 <span id="tv-my-count">0</span> / 2 票</div>
-    </div>
-    <div id="tv-closed-notice">⏱ 投票時間已結束</div>
-    <div id="tv-cards-list"></div>
-  </div>
-
-</div>
-
-<!-- Question FAB -->
-<button id="question-fab">🙋 提問</button>
-
-<!-- Question modal -->
-<div id="question-modal">
-  <div id="question-modal-box">
-    <h3>我要提問</h3>
-    <div id="qm-side-picker">
-      <button class="qm-side-btn pro" id="qm-side-pro" data-side="正方">正方</button>
-      <button class="qm-side-btn con" id="qm-side-con" data-side="反方">反方</button>
-    </div>
-    <div id="qm-form">
-      <div id="qm-target-label">提問對象：<strong id="qm-target-name"></strong>（匿名送出）</div>
-      <textarea id="qm-textarea" placeholder="輸入你想問的問題…" maxlength="100" rows="3"></textarea>
-      <div id="qm-char-count">0 / 100</div>
-    </div>
-    <div class="admin-modal-btns">
-      <button class="adm-btn cancel" id="qm-cancel">取消</button>
-      <button class="adm-btn ok" id="qm-submit" disabled>送出提問</button>
-    </div>
-  </div>
-</div>
-
-<!-- Admin FAB -->
-<button id="admin-fab" title="管理員登入" aria-label="管理員登入">⚙</button>
-
-<!-- Admin login modal -->
-<div id="admin-modal">
-  <div id="admin-modal-box">
-    <h3>管理員登入</h3>
-    <input type="password" id="admin-pwd-input" placeholder="輸入密碼" autocomplete="off"/>
-    <div id="admin-pwd-error">密碼錯誤</div>
-    <div class="admin-modal-btns">
-      <button class="adm-btn cancel" id="admin-modal-cancel">取消</button>
-      <button class="adm-btn ok"     id="admin-modal-ok">登入</button>
-    </div>
-  </div>
 </div>
 
 <!-- Change nickname modal -->
@@ -874,14 +554,43 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-const TOPICS = [
-  "花蓮要吸引更多移居者，還是先照顧現有居民？",
-  "花蓮的問題在於資源不足，還是連結不足？",
-  "花蓮適合長期生活，還是適合短期停留？",
-  "花蓮交通應該優先改善對外連結，還是先提升在地交通便利？",
-  "花蓮產業應該開放大型企業進駐，還是維持地方小型經濟體？",
-  "花蓮應該維持慢生活文化，還是追求更現代化的地方發展？",
+// ══════════════════════════════════════════════════════════════
+// 辯論題目（index.html 與 vote.html 各有一份，修改時兩邊要同步）
+//   short：大螢幕用短標籤；text：手機顯示完整選項
+// ══════════════════════════════════════════════════════════════
+const QUESTIONS = [
+  { title: "花蓮的低薪結構，是可以接受的地方現實嗎？", options: [
+    { short: "接受",         text: "接受，地方條件不同，薪資本來就會不同" },
+    { short: "不接受",       text: "不接受，不能用「花蓮行情」合理化低薪" },
+    { short: "理解但不認命", text: "可以理解，但不能把它當成永遠不會改變的現實" },
+  ]},
+  { title: "你會推薦朋友晚上去東大門夜市嗎？", options: [
+    { short: "會推薦",       text: "會，花蓮最推薦的晚上景點" },
+    { short: "不推薦",       text: "不會，不好逛且不好吃" },
+    { short: "不然去哪？",   text: "要不然花蓮晚上還可以去哪？" },
+  ]},
+  { title: "選舉年，當你跟家人的政治立場相反時怎麼做？", options: [
+    { short: "照樣討論",     text: "同桌吃飯相遇得到，和平討論或是大吵一架" },
+    { short: "避而不談",     text: "有理講不通，政治不上桌，避而不談" },
+    { short: "一家親",       text: "立場相同一家親" },
+  ]},
+  { title: "榮獲百大伴手禮的花蓮麻糬是個令人驕傲的伴手禮嗎？", options: [
+    { short: "是",           text: "是，花蓮麻糬送禮自用兩相宜" },
+    { short: "不是",         text: "不是，真的不會推薦別人買" },
+    { short: "好吃但沒然後", text: "麻糬好吃，但是就沒有然後了" },
+  ]},
+  { title: "很多人說花蓮的物價跟台北一樣，但不論如何，你覺得花蓮的物價是合理的嗎？", options: [
+    { short: "合理",         text: "合理，考量花東較高的物流運輸成本與基本工資調升，售價調高符合商業邏輯。" },
+    { short: "不合理",       text: "不合理，即使考慮運費與成本，花蓮物價仍高於許多西南部縣市，消費感受並不合理。" },
+    { short: "沒意見",       text: "沒有意見，物價高低應由市場機制自行調節，我們應該相信價格會由「看不見的手」決定。" },
+  ]},
 ];
+const OPTION_LETTERS = ["A", "B", "C"];
+
+// 與談人票選（觀眾投票／休息 階段）
+const SPEAKER_VOTE_STAGE  = "觀眾投票／休息";
+const SPEAKER_VOTE_PROMPT = "投給最能說服你，或最能代表你對未來花蓮期待的與談人";
+const SPEAKERS = ["楊舒雅", "馬中原", "周欣宜", "尉　楷"];
 
 // ══════════════════════════════════════════════════════════════
 // IDENTITY  (stored in localStorage)
@@ -893,7 +602,6 @@ if (!deviceId) {
 }
 
 let nickname = localStorage.getItem("debate_nickname") || "";
-let currentVote = null;   // "正方" | "反方" | null
 let votingAllowed = true; // updated from Firebase debate/config/votingOpen
 
 // ══════════════════════════════════════════════════════════════
@@ -956,112 +664,6 @@ function applyNewNick() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// TOPIC VOTE
-// ══════════════════════════════════════════════════════════════
-let myTopicVotes        = new Set(); // topic indices this device voted for
-let allTopicCounts      = [0,0,0,0,0,0];
-let tvCardsBuilt        = false;
-let tvListenersStarted  = false;
-let topicVotingAllowed  = true;
-
-function buildTopicCards() {
-  if (tvCardsBuilt) return; tvCardsBuilt = true;
-  const list = document.getElementById("tv-cards-list");
-  TOPICS.forEach((topic, i) => {
-    const card = document.createElement("div");
-    card.className = "tv-card"; card.id = `tvcard-${i}`;
-    card.innerHTML = `
-      <div class="tv-card-header">
-        <div class="tv-check">✓</div>
-        <span class="tv-num">${i + 1}.</span>
-        <span class="tv-text">${topic}</span>
-      </div>
-      <div class="tv-results">
-        <div class="tv-bar-bg"><div class="tv-bar-fill" id="tv-bar-${i}"></div></div>
-        <span class="tv-count-text" id="tv-cnt-${i}">0</span>
-      </div>`;
-    card.addEventListener("click", () => handleTopicVote(i));
-    list.appendChild(card);
-  });
-}
-
-function handleTopicVote(idx) {
-  if (!topicVotingAllowed) { showToast("投票時間已結束"); return; }
-  const isSelected = myTopicVotes.has(idx);
-  if (!isSelected && myTopicVotes.size >= 2) {
-    showToast("最多只能投 2 票，請先取消一個");
-    return;
-  }
-  const ref = db.ref(`debate/topicVotes/${deviceId}/${idx}`);
-  isSelected ? ref.remove() : ref.set(true);
-}
-
-function updateTopicClosedUI() {
-  const notice = document.getElementById("tv-closed-notice");
-  if (notice) notice.style.display = topicVotingAllowed ? "none" : "block";
-  TOPICS.forEach((_, i) => {
-    const card = document.getElementById(`tvcard-${i}`);
-    if (!card) return;
-    card.classList.toggle("tv-closed", !topicVotingAllowed);
-  });
-}
-
-function startTopicVoteListeners() {
-  if (tvListenersStarted) return; tvListenersStarted = true;
-
-  // Topic voting open/close (auto-closed by timer)
-  db.ref("debate/config/topicVotingOpen").on("value", snap => {
-    topicVotingAllowed = snap.val() !== false;
-    updateTopicClosedUI();
-  });
-
-  // Own votes
-  db.ref(`debate/topicVotes/${deviceId}`).on("value", snap => {
-    myTopicVotes = new Set();
-    const val = snap.val();
-    if (val) Object.keys(val).forEach(k => myTopicVotes.add(parseInt(k)));
-    syncTopicUI();
-  });
-
-  // All votes (for counts)
-  db.ref("debate/topicVotes").on("value", snap => {
-    allTopicCounts = [0,0,0,0,0,0];
-    snap.forEach(dSnap => {
-      dSnap.forEach(tSnap => {
-        const idx = parseInt(tSnap.key);
-        if (!isNaN(idx) && idx < 6) allTopicCounts[idx]++;
-      });
-    });
-    syncTopicCounts();
-  });
-}
-
-function syncTopicUI() {
-  const sec = document.getElementById("topic-vote-section");
-  document.getElementById("tv-my-count").textContent = myTopicVotes.size;
-  if (myTopicVotes.size > 0) sec.classList.add("tv-voted");
-  const full = myTopicVotes.size >= 2;
-  TOPICS.forEach((_, i) => {
-    const card = document.getElementById(`tvcard-${i}`);
-    if (!card) return;
-    const sel = myTopicVotes.has(i);
-    card.classList.toggle("tv-selected", sel);
-    card.classList.toggle("tv-full", full && !sel);
-  });
-}
-
-function syncTopicCounts() {
-  const total = allTopicCounts.reduce((a, b) => a + b, 0);
-  allTopicCounts.forEach((count, i) => {
-    const bar = document.getElementById(`tv-bar-${i}`);
-    const cnt = document.getElementById(`tv-cnt-${i}`);
-    if (!bar) return;
-    bar.style.width = (total > 0 ? Math.round(count / total * 100) : 0) + "%";
-    if (cnt) cnt.textContent = `${count}票`;
-  });
-}
-
-// ══════════════════════════════════════════════════════════════
 // FIREBASE LISTENERS
 // ══════════════════════════════════════════════════════════════
 let commentsCache    = [];
@@ -1079,56 +681,22 @@ function toggleLike(commentId) {
 }
 
 function initFirebaseListeners() {
-  // Listen to current stage from admin
+  // Which vote is live: index.html writes activeQuestion (0–4 or null) and currentStage
+  db.ref("debate/config/activeQuestion").on("value", snap => {
+    const q = snap.val();
+    activeQuestion = typeof q === "number" && q >= 0 && q < QUESTIONS.length ? q : null;
+    refreshVoteMode();
+  });
   db.ref("debate/config/currentStage").on("value", snap => {
-    const stage    = snap.val();
-    const isTopic  = stage === "下期題目票選";
-    const voteEl   = document.getElementById("vote-section");
-    const cmtEl    = document.getElementById("comment-section");
-    const feedEl   = document.getElementById("feed-section");
-    const topicEl  = document.getElementById("topic-vote-section");
-
-    voteEl.style.display  = isTopic ? "none" : "";
-    cmtEl.style.display   = isTopic ? "none" : "";
-    feedEl.style.display  = isTopic ? "none" : "";
-    topicEl.style.display = isTopic ? "flex" : "none";
-
-    if (isTopic) {
-      buildTopicCards();
-      startTopicVoteListeners();
-    }
+    currentStage = snap.val();
+    refreshVoteMode();
   });
 
   // Listen to voting open/close status
   db.ref("debate/config/votingOpen").on("value", snap => {
     votingAllowed = snap.val() !== false;
-    const notice = document.getElementById("vote-closed-notice");
-    const proBt  = document.getElementById("vote-pro");
-    const conBt  = document.getElementById("vote-con");
-    notice.style.display = votingAllowed ? "none" : "block";
-    proBt.disabled = !votingAllowed;
-    conBt.disabled = !votingAllowed;
-    proBt.style.opacity = votingAllowed ? "" : "0.4";
-    conBt.style.opacity = votingAllowed ? "" : "0.4";
-  });
-
-  // Listen to own vote
-  db.ref(`debate/votes/${deviceId}`).on("value", snap => {
-    const v = snap.val();
-    currentVote = v ? v.side : null;
-    updateVoteUI();
-  });
-
-  // Listen to all votes (for tally)
-  db.ref("debate/votes").on("value", snap => {
-    const votes = snap.val() || {};
-    let pro = 0, con = 0;
-    Object.values(votes).forEach(v => {
-      if (v.side === "正方") pro++;
-      else if (v.side === "反方") con++;
-    });
-    updateTally(pro, con);
-    updateAdminStats(pro, con);
+    document.getElementById("vote-closed-notice").style.display = votingAllowed ? "none" : "block";
+    renderVote();
   });
 
   // Listen to comments
@@ -1159,43 +727,144 @@ function initFirebaseListeners() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// VOTE
+// VOTE — 每題 A/B/C（該題 15 分鐘內可改選）＋ 休息時段的與談人票選
 // ══════════════════════════════════════════════════════════════
-document.getElementById("vote-pro").addEventListener("click", () => castVote("正方"));
-document.getElementById("vote-con").addEventListener("click", () => castVote("反方"));
+let activeQuestion = null;   // 0–4 while a question is running
+let currentStage   = null;
+let voteMode       = "idle"; // "question" | "speaker" | "idle"
+let voteRef        = null;   // ref currently listened to for this mode
+let myChoice       = null;   // "A"/"B"/"C" or speaker index
+let qCounts        = [0, 0, 0];
 
-function castVote(side) {
-  if (!votingAllowed) { showToast("投票已關閉"); return; }
-  if (currentVote === side) return; // already selected
-  db.ref(`debate/votes/${deviceId}`).set({
-    nickname: nickname,
-    side:     side,
-    updatedAt: Date.now()
-  });
-  showToast(`已投票：${side}`);
+function refreshVoteMode() {
+  const mode = activeQuestion !== null ? "question"
+    : currentStage === SPEAKER_VOTE_STAGE ? "speaker" : "idle";
+  const key = mode === "question" ? `q${activeQuestion}` : mode;
+  if (key === refreshVoteMode.lastKey) return;
+  refreshVoteMode.lastKey = key;
+
+  if (voteRef) { voteRef.off(); voteRef = null; }
+  voteMode = mode; myChoice = null; qCounts = [0, 0, 0];
+
+  if (mode === "question") {
+    // Whole question node: own choice + counts for the results bars
+    voteRef = db.ref(`debate/qVotes/${activeQuestion}`);
+    voteRef.on("value", snap => {
+      qCounts = [0, 0, 0];
+      snap.forEach(v => {
+        const oi = OPTION_LETTERS.indexOf((v.val() || {}).choice);
+        if (oi >= 0) qCounts[oi]++;
+      });
+      const mine = snap.child(deviceId).val();
+      myChoice = mine ? mine.choice : null;
+      renderVote();
+    });
+  } else if (mode === "speaker") {
+    // Own vote only — speaker results stay hidden until announced on the big screen
+    voteRef = db.ref(`debate/speakerVotes/${deviceId}`);
+    voteRef.on("value", snap => {
+      const mine = snap.val();
+      myChoice = mine ? mine.speaker : null;
+      renderVote();
+    });
+  }
+  renderVote();
 }
 
-function updateVoteUI() {
-  document.getElementById("vote-pro").classList.toggle("selected", currentVote === "正方");
-  document.getElementById("vote-con").classList.toggle("selected", currentVote === "反方");
+function renderVote() {
+  const label   = document.getElementById("vote-section-label");
+  const qEl     = document.getElementById("vote-question");
+  const optsEl  = document.getElementById("vote-options");
+  const hint    = document.getElementById("vote-hint");
+  const results = document.getElementById("vote-results");
+  optsEl.innerHTML = ""; results.innerHTML = ""; results.classList.remove("show");
 
-  const status = document.getElementById("my-vote-status");
-  if (currentVote) {
-    status.innerHTML = `你目前的立場：<strong>${currentVote}</strong>`;
+  if (voteMode === "idle") {
+    label.textContent = "投票";
+    qEl.textContent   = "目前沒有進行中的投票，請留意主持人說明。";
+    hint.textContent  = "";
+    return;
+  }
+
+  let options;
+  if (voteMode === "question") {
+    const q = QUESTIONS[activeQuestion];
+    label.textContent = `第 ${activeQuestion + 1} 題`;
+    qEl.textContent   = q.title;
+    options = q.options.map((opt, i) => ({
+      value: OPTION_LETTERS[i], badge: OPTION_LETTERS[i],
+      badgeCls: `opt-${OPTION_LETTERS[i].toLowerCase()}`, selCls: `sel-${OPTION_LETTERS[i].toLowerCase()}`, text: opt.text
+    }));
   } else {
-    status.innerHTML = "尚未投票";
+    label.textContent = "與談人票選";
+    qEl.textContent   = SPEAKER_VOTE_PROMPT;
+    options = SPEAKERS.map((name, i) => ({
+      value: i, badge: String(i + 1), badgeCls: "opt-n", selCls: "sel-speaker", text: name
+    }));
+  }
+
+  options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "opt-btn" + (myChoice === opt.value ? ` selected ${opt.selCls}` : "");
+    btn.disabled  = !votingAllowed;
+    const badge = document.createElement("span"); badge.className = `opt-letter ${opt.badgeCls}`;
+    badge.textContent = opt.badge;
+    const text = document.createElement("span"); text.textContent = opt.text;
+    btn.append(badge, text);
+    btn.addEventListener("click", () => castVote(opt.value));
+    optsEl.appendChild(btn);
+  });
+
+  const until = voteMode === "question" ? "本題結束前" : "休息結束前";
+  if (myChoice === null) {
+    hint.textContent = `${until}都可以改選`;
+  } else {
+    const chosen = voteMode === "question" ? myChoice : SPEAKERS[myChoice];
+    hint.innerHTML = "";
+    hint.append("你目前選了 ");
+    const strong = document.createElement("strong"); strong.textContent = chosen;
+    hint.append(strong, `，${until}都可以改選`);
+  }
+
+  // Phone shows the question's live ratio once this device has voted
+  if (voteMode === "question" && myChoice !== null) {
+    const total = qCounts.reduce((a, b) => a + b, 0);
+    const title = document.createElement("div"); title.className = "vr-title";
+    title.textContent = `目前投票比例（共 ${total} 票）`;
+    results.appendChild(title);
+    QUESTIONS[activeQuestion].options.forEach((opt, i) => {
+      const pct = total > 0 ? Math.round(qCounts[i] / total * 100) : 0;
+      const cls = `opt-${OPTION_LETTERS[i].toLowerCase()}`;
+      const row = document.createElement("div"); row.className = "vr-row";
+      const badge = document.createElement("span"); badge.className = `opt-letter ${cls}`;
+      badge.textContent = OPTION_LETTERS[i];
+      const bar  = document.createElement("div"); bar.className = "vr-bar";
+      const fill = document.createElement("div"); fill.className = `vr-fill ${cls}`;
+      fill.style.width = pct + "%";
+      bar.appendChild(fill);
+      const num = document.createElement("span"); num.className = "vr-num";
+      num.textContent = `${qCounts[i]} 票・${pct}%`;
+      row.append(badge, bar, num);
+      results.appendChild(row);
+    });
+    results.classList.add("show");
   }
 }
 
-function updateTally(pro, con) {
-  const total = pro + con;
-  document.getElementById("tally-pro-text").textContent   = `正方 ${pro}票`;
-  document.getElementById("tally-con-text").textContent   = `${con}票 反方`;
-  document.getElementById("tally-total-text").textContent = `共 ${total} 票`;
-
-  const proPct = total === 0 ? 50 : Math.round(pro / total * 100);
-  document.getElementById("tally-bar-pro").style.width = proPct + "%";
-  document.getElementById("tally-bar-con").style.width = (100 - proPct) + "%";
+function castVote(value) {
+  if (!votingAllowed) { showToast("投票已關閉"); return; }
+  if (myChoice === value) return; // already selected
+  if (voteMode === "question") {
+    db.ref(`debate/qVotes/${activeQuestion}/${deviceId}`).set({
+      nickname: nickname, choice: value, updatedAt: Date.now()
+    }).catch(() => showToast("投票失敗，請重試"));
+    showToast(`已投票：${value}`);
+  } else if (voteMode === "speaker") {
+    db.ref(`debate/speakerVotes/${deviceId}`).set({
+      nickname: nickname, speaker: value, updatedAt: Date.now()
+    }).catch(() => showToast("投票失敗，請重試"));
+    showToast(`已投票：${SPEAKERS[value]}`);
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1227,7 +896,6 @@ async function submitComment() {
     await db.ref("debate/comments").push({
       nickname:  nickname,
       text:      text,
-      side:      currentVote || null,
       createdAt: Date.now(),
       deleted:   false
     });
@@ -1238,79 +906,6 @@ async function submitComment() {
   } catch(e) {
     showToast("送出失敗，請重試");
     sendBtn.disabled = false;
-  }
-}
-
-// ══════════════════════════════════════════════════════════════
-// QUESTION MODAL — ask an anonymous question for 正方/反方, any time
-// ══════════════════════════════════════════════════════════════
-const questionFab   = document.getElementById("question-fab");
-const questionModal = document.getElementById("question-modal");
-const qmSidePicker  = document.getElementById("qm-side-picker");
-const qmForm        = document.getElementById("qm-form");
-const qmTargetName  = document.getElementById("qm-target-name");
-const qmTextarea    = document.getElementById("qm-textarea");
-const qmCharCount   = document.getElementById("qm-char-count");
-const qmSubmitBtn   = document.getElementById("qm-submit");
-let qmSide = null; // "正方" | "反方" | null
-
-function resetQuestionModal() {
-  qmSide = null;
-  qmForm.classList.remove("open");
-  qmSidePicker.querySelectorAll(".qm-side-btn").forEach(b => b.classList.remove("selected"));
-  qmTextarea.value = "";
-  qmCharCount.textContent = `0 / ${MAX_LEN}`;
-  qmCharCount.className = "";
-  qmSubmitBtn.disabled = true;
-}
-
-questionFab.addEventListener("click", () => {
-  resetQuestionModal();
-  questionModal.classList.add("open");
-});
-
-document.getElementById("qm-cancel").addEventListener("click", () => {
-  questionModal.classList.remove("open");
-});
-
-qmSidePicker.querySelectorAll(".qm-side-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    qmSide = btn.dataset.side;
-    qmSidePicker.querySelectorAll(".qm-side-btn").forEach(b => b.classList.remove("selected"));
-    btn.classList.add("selected");
-    qmTargetName.textContent = qmSide;
-    qmForm.classList.add("open");
-    qmSubmitBtn.disabled = qmTextarea.value.trim().length === 0;
-    qmTextarea.focus();
-  });
-});
-
-qmTextarea.addEventListener("input", () => {
-  const len = qmTextarea.value.length;
-  qmCharCount.textContent = `${len} / ${MAX_LEN}`;
-  qmCharCount.className   = len >= MAX_LEN ? "over" : len >= 80 ? "warn" : "";
-  qmSubmitBtn.disabled    = len === 0 || len > MAX_LEN || !qmSide;
-});
-
-qmSubmitBtn.addEventListener("click", submitQuestion);
-
-async function submitQuestion() {
-  const text = qmTextarea.value.trim();
-  if (!text || text.length > MAX_LEN || !qmSide) return;
-
-  qmSubmitBtn.disabled = true;
-  try {
-    await db.ref("debate/questions").push({
-      text:      text,
-      side:      qmSide,
-      createdAt: Date.now(),
-      drawn:     false
-    });
-    questionModal.classList.remove("open");
-    showToast("提問已送出 ✓");
-  } catch(e) {
-    showToast("送出失敗，請重試");
-    qmSubmitBtn.disabled = false;
   }
 }
 
@@ -1333,7 +928,7 @@ function renderFeed(list) {
   feedList.innerHTML = "";
   list.slice().reverse().forEach(c => {
     const item = document.createElement("div");
-    item.className  = "feed-item " + (c.side === "正方" ? "pro" : c.side === "反方" ? "con" : "");
+    item.className  = "feed-item";
     item.dataset.id = c.id;
 
     const meta = document.createElement("div"); meta.className = "feed-meta";
@@ -1380,82 +975,15 @@ function showToast(msg) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// VOTE REVEALED — show tally when admin publishes results
-// ══════════════════════════════════════════════════════════════
-db.ref("debate/config/voteRevealed").on("value", snap => {
-  document.body.classList.toggle("vote-revealed", snap.val() === true);
-});
-
-// ══════════════════════════════════════════════════════════════
-// ADMIN LOGIN (vote.html side)
-// ══════════════════════════════════════════════════════════════
-const ADMIN_PASSWORD = "debate2026";
-let adminLoggedIn = false;
-
-const adminFab    = document.getElementById("admin-fab");
-const adminModal  = document.getElementById("admin-modal");
-const adminPwdIn  = document.getElementById("admin-pwd-input");
-const adminPwdErr = document.getElementById("admin-pwd-error");
-
-function setAdminLoggedIn(val) {
-  adminLoggedIn = val;
-  document.body.classList.toggle("admin-logged-in", val);
-}
-
-adminFab.addEventListener("click", () => {
-  if (adminLoggedIn) {
-    setAdminLoggedIn(false);
-    return;
-  }
-  adminPwdIn.value = "";
-  adminPwdErr.style.display = "none";
-  adminModal.classList.add("open");
-  setTimeout(() => adminPwdIn.focus(), 100);
-});
-
-document.getElementById("admin-modal-cancel").addEventListener("click", () => {
-  adminModal.classList.remove("open");
-});
-
-function attemptAdminLogin() {
-  if (adminPwdIn.value === ADMIN_PASSWORD) {
-    adminModal.classList.remove("open");
-    setAdminLoggedIn(true);
-  } else {
-    adminPwdErr.style.display = "block";
-    adminPwdIn.select();
-  }
-}
-
-document.getElementById("admin-modal-ok").addEventListener("click", attemptAdminLogin);
-adminPwdIn.addEventListener("keydown", e => { if (e.key === "Enter") attemptAdminLogin(); });
-
-document.getElementById("admin-logout-btn").addEventListener("click", () => {
-  setAdminLoggedIn(false);
-});
-
-// Update admin stats bar whenever votes change (reuses same listener data)
-function updateAdminStats(pro, con) {
-  const total = pro + con;
-  document.getElementById("adm-pro-text").textContent   = `正方 ${pro}票`;
-  document.getElementById("adm-con-text").textContent   = `${con}票 反方`;
-  document.getElementById("adm-total-text").textContent = `共 ${total} 票`;
-}
-
-// ══════════════════════════════════════════════════════════════
 // FIREBASE CLEANUP  — detach all listeners on page unload
 // ══════════════════════════════════════════════════════════════
 window.addEventListener("beforeunload", () => {
+  if (voteRef) voteRef.off();
+  db.ref("debate/config/activeQuestion").off();
+  db.ref("debate/config/currentStage").off();
   db.ref("debate/config/votingOpen").off();
-  db.ref("debate/config/voteRevealed").off();
-  db.ref(`debate/votes/${deviceId}`).off();
-  db.ref("debate/votes").off();
   db.ref("debate/comments").off();
   db.ref("debate/likes").off();
-  db.ref(`debate/topicVotes/${deviceId}`).off();
-  db.ref("debate/topicVotes").off();
-  db.ref("debate/config/currentStage").off();
-  db.ref("debate/config/topicVotingOpen").off();
 });
 </script>
 </body>
