@@ -429,22 +429,61 @@
   #vro-body { display: flex; align-items: center; justify-content: center; gap: clamp(24px, 3vw, 48px); width: min(1500px, 94vw); }
   #vro-rows { display: flex; flex-direction: column; gap: 16px; flex: 1; min-width: 0; max-width: 1100px; }
 
-  /* Speaker winner photo(s): pixelated canvas, revealed coarse → fine */
-  #vro-podium { --podium-size: min(46vh, 26vw); display: flex; gap: 22px; flex-shrink: 0; }
+  /* Speaker winner photo(s) with a crown on the head */
+  #vro-podium { --podium-size: min(46vh, 26vw); display: flex; gap: 22px; flex-shrink: 0; padding-top: calc(var(--podium-size) * 0.18); }
   #vro-podium:empty { display: none; }
   #vro-podium[data-count="2"] { --podium-size: min(36vh, 20vw); }
   #vro-podium[data-count="3"],
-  #vro-podium[data-count="4"] { --podium-size: min(24vh, 12vw); }
+  #vro-podium[data-count="4"] { --podium-size: min(19vh, 13vw); }
+  /* 3+ way tie: photos on top, ranking below */
+  #vro-body[data-podium="3"], #vro-body[data-podium="4"] { flex-direction: column; gap: 14px; }
+  #vro-body[data-podium="3"] #vro-rows, #vro-body[data-podium="4"] #vro-rows { width: min(1100px, 92vw); flex: none; gap: 10px; }
+  #vro-body[data-podium="3"] .vro-row, #vro-body[data-podium="4"] .vro-row { padding: 6px 22px; }
+  @media (max-height: 800px) {
+    #vote-result-overlay { gap: 12px; padding: 20px 40px; }
+    #vro-body[data-podium="3"] #vro-podium, #vro-body[data-podium="4"] #vro-podium { --podium-size: min(14vh, 11vw); }
+    #vro-body[data-podium="3"] .vro-row, #vro-body[data-podium="4"] .vro-row { padding: 2px 18px; }
+    #vro-body[data-podium="3"] .vro-row .opt-letter, #vro-body[data-podium="4"] .vro-row .opt-letter { width: 40px; height: 40px; font-size: 20px; }
+  }
   .podium-card { display: flex; flex-direction: column; align-items: center; gap: 14px; }
-  .podium-card canvas {
-    display: block;
+  .podium-photo {
+    position: relative;
     width: var(--podium-size);
     height: var(--podium-size);
+    transform: rotate(-2deg);
+  }
+  .podium-photo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     background: var(--white);
     border: 6px solid var(--ink);
     box-shadow: 10px 10px 0 var(--ink);
-    image-rendering: pixelated;
-    transform: rotate(-2deg);
+  }
+  .podium-crown {
+    position: absolute;
+    width: 36%;
+    left: var(--x);
+    top: var(--y);
+    transform: translate(-50%, -100%) rotate(var(--rot));
+    transform-origin: 50% 100%;
+    filter: drop-shadow(4px 4px 0 var(--ink));
+    pointer-events: none;
+  }
+  .podium-play .podium-photo { animation: podium-pop 0.45s cubic-bezier(.3,1.6,.6,1) both; }
+  .podium-play .podium-crown { animation: crown-drop 0.7s cubic-bezier(.3,1.5,.55,1) 0.45s both; }
+  @keyframes podium-pop {
+    from { transform: rotate(-2deg) scale(0.6); opacity: 0; }
+    to   { transform: rotate(-2deg) scale(1);   opacity: 1; }
+  }
+  @keyframes crown-drop {
+    from { transform: translate(-50%, -260%) rotate(calc(var(--rot) - 25deg)); opacity: 0; }
+    60%  { opacity: 1; }
+    to   { transform: translate(-50%, -100%) rotate(var(--rot)); opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .podium-play .podium-photo, .podium-play .podium-crown { animation: none; }
   }
   .podium-name {
     font-size: clamp(20px, 2.4vw, 34px);
@@ -919,11 +958,12 @@ const SPEAKER_VOTE_STAGE  = "觀眾投票／休息";
 const SPEAKER_VOTE_PROMPT = "投給最能說服你，或最能代表你對未來花蓮期待的與談人";
 const SPEAKERS = ["楊舒雅", "馬中原", "周欣宜", "尉　楷"];
 // 第一名照片（index.html 專用，順序同 SPEAKERS；512×512 頭肩裁切）
+//   crown：王冠底部中心在照片中的位置（%，頭頂）與傾斜角度
 const SPEAKER_PHOTOS = [
-  "assets/speakers/yang.webp",
-  "assets/speakers/ma.webp",
-  "assets/speakers/zhou.webp",
-  "assets/speakers/wei.webp",
+  { src: "assets/speakers/yang.webp", crown: { x: 50, y: 15, rot: -4  } },
+  { src: "assets/speakers/ma.webp",   crown: { x: 48, y: 16, rot: 3   } },
+  { src: "assets/speakers/zhou.webp", crown: { x: 38, y: 10, rot: -8  } },
+  { src: "assets/speakers/wei.webp",  crown: { x: 31, y: 12, rot: -14 } },
 ];
 
 // ══════════════════════════════════════════════════════════════
@@ -1392,70 +1432,51 @@ function renderVoteOverlay() {
   document.getElementById("vro-total").textContent = `共 ${total} 票`;
 }
 
-// ── Winner photo(s): pixelated, animated from coarse to fine blocks on reveal ──
-const PODIUM_STEPS = [4, 6, 8, 11, 15, 20, 26, 34, 44, 56, 64]; // blocks per side; last = final
-const podiumImages = SPEAKER_PHOTOS.map(src => { const img = new Image(); img.src = src; return img; });
-const pixelBuffer  = document.createElement("canvas");
-let podiumKey   = "";
-let podiumTimer = null;
+// ── Winner photo(s) with a crown; photo pops in and the crown drops on reveal ──
+const CROWN_SVG = `<svg class="podium-crown" viewBox="0 0 120 92" aria-hidden="true">
+  <path d="M8 34 L32 58 L60 10 L88 58 L112 34 L102 84 L18 84 Z" fill="#FFD400" stroke="#111111" stroke-width="6" stroke-linejoin="round"/>
+  <rect x="16" y="70" width="88" height="16" fill="#FFE766" stroke="#111111" stroke-width="6" stroke-linejoin="round"/>
+  <circle cx="8"   cy="30" r="8" fill="#F51406" stroke="#111111" stroke-width="5"/>
+  <circle cx="60"  cy="8"  r="8" fill="#1F3FBF" stroke="#111111" stroke-width="5"/>
+  <circle cx="112" cy="30" r="8" fill="#F51406" stroke="#111111" stroke-width="5"/>
+  <circle cx="60"  cy="78" r="5" fill="#1F3FBF" stroke="#111111" stroke-width="3"/>
+</svg>`;
+SPEAKER_PHOTOS.forEach(p => { new Image().src = p.src; }); // preload
+let podiumKey = "";
 
 function renderPodium(winners) {
   const key = winners.join(",");
-  if (key === podiumKey) return;       // same winner(s): keep canvases as they are
+  if (key === podiumKey) return;       // same winner(s): leave as is
   podiumKey = key;
   const el = document.getElementById("vro-podium");
   el.innerHTML = "";
   el.dataset.count = winners.length;
+  el.parentElement.dataset.podium = winners.length;
   winners.forEach(i => {
-    const card   = document.createElement("div"); card.className = "podium-card";
-    const canvas = document.createElement("canvas");
-    canvas.width = canvas.height = 512;
-    canvas.dataset.speaker = i;
-    canvas.setAttribute("role", "img");
-    canvas.setAttribute("aria-label", `${SPEAKERS[i]} 照片`);
+    const { src, crown } = SPEAKER_PHOTOS[i];
+    const card  = document.createElement("div"); card.className = "podium-card";
+    const photo = document.createElement("div"); photo.className = "podium-photo";
+    photo.style.setProperty("--x",   crown.x + "%");
+    photo.style.setProperty("--y",   crown.y + "%");
+    photo.style.setProperty("--rot", crown.rot + "deg");
+    const img = document.createElement("img");
+    img.src = src; img.alt = `${SPEAKERS[i]} 照片`;
+    photo.appendChild(img);
+    photo.insertAdjacentHTML("beforeend", CROWN_SVG);
     const name = document.createElement("div"); name.className = "podium-name";
     name.textContent = `🏆 ${SPEAKERS[i]}`;
-    card.append(canvas, name);
+    card.append(photo, name);
     el.appendChild(card);
   });
   animatePodium();
 }
 
-function drawPixelated(canvas, img, blocks) {
-  if (!img.complete || !img.naturalWidth) return;
-  pixelBuffer.width = pixelBuffer.height = blocks;
-  const bctx = pixelBuffer.getContext("2d");
-  bctx.imageSmoothingEnabled = true;
-  bctx.drawImage(img, 0, 0, blocks, blocks);            // average colours down to blocks×blocks
-  const ctx = canvas.getContext("2d");
-  ctx.imageSmoothingEnabled = false;                    // scale back up as hard-edged squares
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(pixelBuffer, 0, 0, blocks, blocks, 0, 0, canvas.width, canvas.height);
-}
-
-function drawPodium(blocks) {
-  document.querySelectorAll("#vro-podium canvas").forEach(c =>
-    drawPixelated(c, podiumImages[+c.dataset.speaker], blocks));
-}
-
+// Replay the pop-in / crown-drop animation
 function animatePodium() {
-  clearInterval(podiumTimer); podiumTimer = null;
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const steps  = reduce ? PODIUM_STEPS.slice(-1) : PODIUM_STEPS;
-  const pending = [...document.querySelectorAll("#vro-podium canvas")]
-    .map(c => podiumImages[+c.dataset.speaker])
-    .filter(img => !img.complete);
-  if (pending.length) {                 // wait for photos, then run the animation
-    Promise.all(pending.map(img => img.decode().catch(() => {}))).then(animatePodium);
-    return;
-  }
-  let i = 0;
-  drawPodium(steps[0]);
-  podiumTimer = setInterval(() => {
-    i++;
-    drawPodium(steps[i]);
-    if (i >= steps.length - 1) { clearInterval(podiumTimer); podiumTimer = null; }
-  }, 190);
+  const el = document.getElementById("vro-podium");
+  el.classList.remove("podium-play");
+  void el.offsetWidth; // restart CSS animations
+  el.classList.add("podium-play");
 }
 
 // ══════════════════════════════════════════════════════════════
