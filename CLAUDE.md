@@ -95,17 +95,79 @@ Both files contain identical `QUESTIONS` (title + options with `short` label for
 
 ## Firebase Rules Reference
 
-Current rules structure (update in Firebase Console if adding new paths):
+Current rules (paste into Firebase Console → Realtime Database → Rules when they change). Besides access, they validate shape: only the fields the site writes, `choice` A/B/C, `speaker` 0–3, question index 0–4, comment text 1–100 chars, nickname ≤ 30, device IDs `dev_[a-z0-9]{1,32}`, likes must be `true`. Deletes (`null`) skip `.validate`, so admin clears still work. `comments` has `.indexOn: createdAt` so the phone query `orderByChild("createdAt").limitToLast(COMMENT_LIMIT)` (vote.html, 100) is filtered server-side; index.html still reads all comments so "清除留言" covers everything. If you add or rename a field the site writes, update these rules first or the write is rejected. Legacy `votes` / `topicVotes` / `questions` are no longer allowed.
 
 ```json
 {
   "rules": {
     "debate": {
-      "config":       { ".read": true, ".write": true },
-      "qVotes":       { ".read": true, "$q": { "$deviceId": { ".write": true } } },
-      "speakerVotes": { ".read": true, "$deviceId": { ".write": true } },
-      "comments":     { ".read": true, "$commentId": { ".write": "..." } },
-      "likes":        { ".read": true, "$commentId": { "$deviceId": { ".write": true } } }
+      "config": {
+        ".read": true,
+        ".write": true,
+        "currentStage":   { ".validate": "newData.isString() && newData.val().length <= 50" },
+        "activeQuestion": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 4" },
+        "votingOpen":     { ".validate": "newData.isBoolean()" },
+        "voteRevealed":   { ".validate": "newData.isBoolean()" },
+        "display": {
+          ".validate": "newData.hasChildren(['stageIndex', 'isRunning', 'at'])",
+          "stageIndex":     { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 100" },
+          "stageTotalTime": { ".validate": "newData.isNumber()" },
+          "isRunning":      { ".validate": "newData.isBoolean()" },
+          "timeLeft":       { ".validate": "newData.isNumber()" },
+          "isOvertime":     { ".validate": "newData.isBoolean()" },
+          "overtime":       { ".validate": "newData.isNumber()" },
+          "at":             { ".validate": "newData.isNumber()" },
+          "$other":         { ".validate": false }
+        },
+        "$other": { ".validate": false }
+      },
+      "qVotes": {
+        ".read": true,
+        "$q": {
+          ".validate": "$q.matches(/^[0-4]$/)",
+          "$deviceId": {
+            ".write": "$deviceId.matches(/^dev_[a-z0-9]{1,32}$/) || !newData.exists()",
+            ".validate": "newData.hasChildren(['choice', 'updatedAt'])",
+            "choice":    { ".validate": "newData.isString() && newData.val().matches(/^[ABC]$/)" },
+            "nickname":  { ".validate": "newData.isString() && newData.val().length <= 30" },
+            "updatedAt": { ".validate": "newData.isNumber()" },
+            "$other":    { ".validate": false }
+          }
+        }
+      },
+      "speakerVotes": {
+        ".read": true,
+        "$deviceId": {
+          ".write": "$deviceId.matches(/^dev_[a-z0-9]{1,32}$/) || !newData.exists()",
+          ".validate": "newData.hasChildren(['speaker', 'updatedAt'])",
+          "speaker":   { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3" },
+          "nickname":  { ".validate": "newData.isString() && newData.val().length <= 30" },
+          "updatedAt": { ".validate": "newData.isNumber()" },
+          "$other":    { ".validate": false }
+        }
+      },
+      "comments": {
+        ".read": true,
+        ".indexOn": ["createdAt"],
+        "$commentId": {
+          ".write": "!data.exists() || (data.child('deleted').val() === false && newData.child('deleted').val() === true)",
+          ".validate": "newData.hasChildren(['text', 'createdAt', 'deleted'])",
+          "text":      { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100" },
+          "nickname":  { ".validate": "newData.isString() && newData.val().length <= 30" },
+          "createdAt": { ".validate": "newData.isNumber()" },
+          "deleted":   { ".validate": "newData.isBoolean()" },
+          "$other":    { ".validate": false }
+        }
+      },
+      "likes": {
+        ".read": true,
+        "$commentId": {
+          "$deviceId": {
+            ".write": "$deviceId.matches(/^dev_[a-z0-9]{1,32}$/) || !newData.exists()",
+            ".validate": "newData.val() === true"
+          }
+        }
+      }
     }
   }
 }
