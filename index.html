@@ -71,9 +71,7 @@
     border-bottom: 5px solid var(--ink);
     gap: 16px;
   }
-  #title-left { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-  .title-series { font-size: clamp(12px, 1.1vw, 15px); font-weight: 900; letter-spacing: 0.06em; }
-  .title-series-sub { font-size: clamp(11px, 0.9vw, 13px); font-weight: 700; color: var(--muted); }
+  #title-left { min-width: 0; } /* empty spacer keeps the logo centred */
   #title-bar h1 { line-height: 0; display: flex; justify-content: center; }
   #title-img {
     height: clamp(56px, 11vh, 118px);
@@ -666,10 +664,7 @@
 
   <!-- Title Bar -->
   <header id="title-bar">
-    <div id="title-left">
-      <span class="title-series">生活之間：從住民到公民</span>
-      <span class="title-series-sub">系列辯論活動</span>
-    </div>
+    <div id="title-left"></div>
     <h1>
       <img id="title-img" src="assets/title.webp" alt="自作自受的花蓮人 — 第四場辯論活動">
     </h1>
