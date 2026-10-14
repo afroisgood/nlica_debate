@@ -67,7 +67,7 @@ Legacy paths `votes`, `topicVotes`, `questions`, `config/topicVotingOpen|questio
 
 `STAGES` is built from `QUESTIONS`: each entry is `[name, durationSeconds, questionIndex?]`. Per question (15 min): `第N題｜選邊站・投票` 180s → `第N題｜與談人立場說明` 480s → `第N題｜觀眾發言 1` 120s → `第N題｜觀眾發言 2` 120s. Then `觀眾投票／休息` 600s (= `SPEAKER_VOTE_STAGE`), `頒獎時間` 300s, `與談人分享` 900s, `活動結束` 0.
 
-`stageQuestion()` returns the entry's question index (or null). `loadStage()` stops the timer, resets state, calls `syncStageToFirebase()` (writes `currentStage` + `activeQuestion`), then re-renders the vote card / overlay. The "公布結果" overlay (`renderVoteOverlay()`) shows the current question's A/B/C results during question stages, otherwise the speaker ranking (sorted, winner highlighted).
+`stageQuestion()` returns the entry's question index (or null). `loadStage()` stops the timer, resets state, calls `syncStageToFirebase()` (writes `currentStage` + `activeQuestion`), then re-renders the vote card / overlay. The "公布結果" overlay (`renderVoteOverlay()`) shows the current question's A/B/C results during question stages, otherwise the speaker ranking (sorted, rank badges, winner highlighted) with the winner's photo(s) on the left (`#vro-podium`, ties side by side; 3+ ties stack photos above the ranking via `#vro-body[data-podium]`), each wearing a comic crown (`CROWN_SVG`). Photos are `SPEAKER_PHOTOS` (index.html only, `assets/speakers/*.webp`, 512×512 head-and-shoulders crops) with per-photo crown position `{x, y, rot}` in % of the photo; `animatePodium()` replays the photo pop-in + crown drop each time the overlay is revealed.
 
 ### Admin gate (index.html)
 
