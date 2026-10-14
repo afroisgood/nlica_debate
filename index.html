@@ -71,7 +71,29 @@
     border-bottom: 5px solid var(--ink);
     gap: 16px;
   }
-  #title-left { min-width: 0; } /* empty spacer keeps the logo centred */
+  /* Live participation stickers (votes / comments / likes) */
+  #title-left { min-width: 0; display: flex; align-items: center; gap: clamp(8px, 1vw, 14px); }
+  .live-stat {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    background: var(--white);
+    border: 4px solid var(--ink);
+    box-shadow: 5px 5px 0 var(--ink);
+    padding: 4px clamp(10px, 1vw, 16px);
+    min-width: 4.6em;
+  }
+  .live-stat:nth-child(1) { background: var(--yellow); transform: rotate(-3deg); }
+  .live-stat:nth-child(2) { transform: rotate(2deg); }
+  .live-stat:nth-child(3) { transform: rotate(-2deg); }
+  .live-stat-label { font-size: 13px; font-weight: 900; white-space: nowrap; }
+  .live-stat-num { font-family: var(--font-num); font-size: clamp(22px, 2.2vw, 34px); line-height: 1; }
+  #stat-comments { color: var(--blue); }
+  #stat-likes    { color: var(--red-dk); }
+  .live-stat-num.bump { animation: stat-bump 0.35s ease-out; }
+  @keyframes stat-bump { 40% { transform: scale(1.35); } }
+  @media (prefers-reduced-motion: reduce) { .live-stat-num.bump { animation: none; } }
+  #title-left .live-badge { display: inline-flex; align-items: center; gap: 6px; }
+  #title-left .live-badge::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--red); }
+  @media (max-width: 1250px) { #title-left .live-badge { display: none; } }
   #title-bar h1 { line-height: 0; display: flex; justify-content: center; }
   #title-img {
     height: clamp(56px, 11vh, 118px);
@@ -733,7 +755,12 @@
 
   <!-- Title Bar -->
   <header id="title-bar">
-    <div id="title-left"></div>
+    <div id="title-left" aria-label="即時參與數據">
+      <div class="live-stat"><span class="live-stat-label" id="stat-votes-label">已投票</span><span class="live-stat-num" id="stat-votes">0</span></div>
+      <div class="live-stat"><span class="live-stat-label">留言</span><span class="live-stat-num" id="stat-comments">0</span></div>
+      <div class="live-stat"><span class="live-stat-label">按讚</span><span class="live-stat-num" id="stat-likes">0</span></div>
+      <span class="live-badge">LIVE</span>
+    </div>
     <h1>
       <img id="title-img" src="assets/title.webp" alt="自作自受的花蓮人 — 第四場辯論活動">
     </h1>
@@ -1343,6 +1370,25 @@ db.ref("debate/speakerVotes").on("value", snap => {
 function pctOf(n, total) { return total > 0 ? Math.round(n / total * 100) : 0; }
 
 // Right-panel card: live A/B/C during a question, speaker-vote status otherwise
+// Header stickers: votes on the current question (or speaker votes outside questions),
+// visible comments, and likes on those comments — all from data already being listened to.
+function renderLiveStats() {
+  const q = stageQuestion();
+  const votes = q !== null ? qCounts[q].reduce((a, b) => a + b, 0)
+                           : speakerCounts.reduce((a, b) => a + b, 0);
+  const likes = commentsCache.reduce((n, c) => n + Object.keys(likesCache[c.id] || {}).length, 0);
+  document.getElementById("stat-votes-label").textContent = q !== null ? "已投票" : "與談人票";
+  setStat("stat-votes", votes);
+  setStat("stat-comments", commentsCache.length);
+  setStat("stat-likes", likes);
+}
+function setStat(id, n) {
+  const el = document.getElementById(id);
+  if (el.textContent === String(n)) return;
+  el.textContent = n;
+  el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump");
+}
+
 function renderVoteCard() {
   const q     = stageQuestion();
   const title = document.getElementById("vote-card-title");
@@ -1383,6 +1429,7 @@ function renderVoteCard() {
     note.textContent    = STAGES[stageIndex][0] === SPEAKER_VOTE_STAGE
       ? "請用手機投票，休息結束前都可以改選" : "結果由主持人公布";
   }
+  renderLiveStats(); // runs on every stage / vote change
 }
 
 // Fullscreen result: current question during Q stages, speaker ranking otherwise
@@ -1493,6 +1540,7 @@ db.ref("debate/comments").orderByChild("createdAt").on("value", snap => {
     if (c && typeof c === 'object' && !c.deleted) commentsCache.push({ id: child.key, ...c });
   });
   renderComments(commentsCache);
+  renderLiveStats();
 });
 
 db.ref("debate/likes").on("value", snap => {
@@ -1512,6 +1560,7 @@ db.ref("debate/likes").on("value", snap => {
       right.insertBefore(el, right.firstChild);
     }
   });
+  renderLiveStats();
 });
 
 function renderComments(list) {
