@@ -554,6 +554,10 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// Phones only sync the newest comments, so each (re)connect downloads a bounded amount
+const COMMENT_LIMIT = 100;
+const commentsQuery = db.ref("debate/comments").orderByChild("createdAt").limitToLast(COMMENT_LIMIT);
+
 // ══════════════════════════════════════════════════════════════
 // 辯論題目（index.html 與 vote.html 各有一份，修改時兩邊要同步）
 //   short：大螢幕用短標籤；text：手機顯示完整選項
@@ -700,7 +704,7 @@ function initFirebaseListeners() {
   });
 
   // Listen to comments
-  db.ref("debate/comments").orderByChild("createdAt").on("value", snap => {
+  commentsQuery.on("value", snap => {
     commentsCache = [];
     snap.forEach(child => {
       const c = child.val();
@@ -982,7 +986,7 @@ window.addEventListener("beforeunload", () => {
   db.ref("debate/config/activeQuestion").off();
   db.ref("debate/config/currentStage").off();
   db.ref("debate/config/votingOpen").off();
-  db.ref("debate/comments").off();
+  commentsQuery.off();
   db.ref("debate/likes").off();
 });
 </script>
